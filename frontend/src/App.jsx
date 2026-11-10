@@ -185,6 +185,7 @@ function App() {
   const [actionMessage, setActionMessage] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [applying, setApplying] = useState(null)
+  const [selectedJob, setSelectedJob] = useState(null)
 
   const loadDashboard = useCallback(async () => {
     setLoading(true)
@@ -427,31 +428,69 @@ function App() {
 
             {active === 'Overview' && (
               <>
-                <section className="relative overflow-hidden rounded-3xl bg-[#5C1019] px-7 py-9 text-white shadow-sm md:px-10 md:py-11">
-                  <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full border border-white/10" />
-                  <div className="pointer-events-none absolute -bottom-40 right-28 h-80 w-80 rounded-full bg-[#BC2132]/50 blur-3xl" />
-                  <div className="relative z-10 max-w-2xl">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[1.7px] text-white/80">
-                      <Sparkles size={13} /> Opportunity starts here
+                <section className="relative overflow-hidden rounded-[28px] bg-[#5C1019] px-6 py-9 text-white md:px-10 md:py-12">
+                  <div className="pointer-events-none absolute -right-24 -top-28 h-96 w-96 rounded-full border border-white/10" />
+                  <div className="pointer-events-none absolute -bottom-44 right-24 h-80 w-80 rounded-full bg-[#BC2132]/40 blur-3xl" />
+                  <div className="relative z-10 max-w-3xl">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[1.5px] text-white/80">
+                      <Sparkles size={13} /> Kenya's career marketplace
                     </span>
-                    <h1 className="mt-5 text-3xl font-semibold leading-tight tracking-tight md:text-[42px]">
-                      Find a job that moves you forward.
+                    <h1 className="mt-5 max-w-2xl text-3xl font-bold leading-[1.12] tracking-tight text-white md:text-[46px]">
+                      Find work that moves your <span className="text-[#F2B8C0]">future forward.</span>
                     </h1>
-                    <p className="mt-3 max-w-lg text-sm leading-7 text-white/70">
-                      Discover verified opportunities, connect with employers and take the next step in your career.
+                    <p className="mt-4 max-w-xl text-sm leading-7 text-white/70 md:text-base">
+                      Discover verified opportunities, explore growing companies and find a role that matches your ambition.
                     </p>
-                    <button onClick={() => setActive('Find jobs')} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#8F1725] transition hover:bg-[#FFF0F1]">
-                      Explore jobs <ArrowUpRight size={16} />
-                    </button>
-                  </div>
-                  <div className="pointer-events-none absolute bottom-4 right-8 hidden text-[120px] font-black leading-none text-white/[0.06] lg:block">J.</div>
-                </section>
 
+                    <div className="mt-8 grid gap-2 rounded-2xl bg-white p-2.5 shadow-2xl shadow-black/20 md:grid-cols-[1.3fr_1fr_auto]">
+                      <label className="flex min-w-0 items-center gap-3 rounded-xl px-3 py-3 text-gray-500 focus-within:bg-gray-50">
+                        <Search size={19} className="shrink-0 text-[#BC2132]" />
+                        <input
+                          value={search}
+                          onChange={(event) => setSearch(event.target.value)}
+                          onKeyDown={(event) => event.key === 'Enter' && setActive('Find jobs')}
+                          placeholder="Job title, skill or company"
+                          className="w-full min-w-0 bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
+                        />
+                      </label>
+                      <label className="flex min-w-0 items-center gap-3 rounded-xl border-t border-gray-100 px-3 py-3 text-gray-500 focus-within:bg-gray-50 md:border-l md:border-t-0">
+                        <MapPin size={19} className="shrink-0 text-[#BC2132]" />
+                        <input
+                          value={locationSearch}
+                          onChange={(event) => setLocationSearch(event.target.value)}
+                          onKeyDown={(event) => event.key === 'Enter' && setActive('Find jobs')}
+                          placeholder="County or remote"
+                          className="w-full min-w-0 bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
+                        />
+                      </label>
+                      <button
+                        onClick={() => setActive('Find jobs')}
+                        className="flex items-center justify-center gap-2 rounded-xl bg-[#BC2132] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#BC2132]/20 hover:bg-[#9F1C2A]"
+                      >
+                        Search jobs <ArrowUpRight size={16} />
+                      </button>
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px] text-white/65">
+                      <span className="mr-1 font-semibold text-white/80">Popular searches</span>
+                      {['Software Developer', 'Internship', 'Remote', 'Marketing'].map((term) => (
+                        <button
+                          key={term}
+                          onClick={() => { setSearch(term); setActive('Find jobs') }}
+                          className="rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 transition hover:border-white/40 hover:bg-white/15 hover:text-white"
+                        >
+                          {term}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="pointer-events-none absolute bottom-3 right-8 hidden select-none text-[150px] font-black leading-none text-white/[0.045] xl:block">J.</div>
+                </section>
                 <section className="grid gap-4 sm:grid-cols-3">
                   {[
-                    { label: 'Applications sent', value: applications.length, icon: FileText, detail: 'Your submitted applications' },
-                    { label: 'Available opportunities', value: jobs.length, icon: BriefcaseBusiness, detail: 'Verified job listings' },
-                    { label: 'Saved opportunities', value: saved.length, icon: Bookmark, detail: 'Jobs in your shortlist' },
+                    { label: 'Applications', value: applications.length, icon: FileText, detail: 'Track your progress' },
+                    { label: 'Open opportunities', value: jobs.length, icon: BriefcaseBusiness, detail: 'Verified jobs across Kenya' },
+                    { label: 'Saved jobs', value: saved.length, icon: Bookmark, detail: 'Your personal shortlist' },
                   ].map(({ label, value, icon: Icon, detail }) => (
                     <article key={label} className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_2px_10px_rgba(20,20,20,0.025)]">
                       <div className="flex items-center justify-between">
@@ -623,42 +662,57 @@ function App() {
                   ) : (
                     <div className="space-y-3">
                       {visibleJobs.map((job) => (
-                        <article key={job.id} className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_2px_10px_rgba(20,20,20,0.025)] transition hover:border-[#E9B9BF] hover:shadow-md md:p-6">
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#FFF0F1] text-lg font-bold text-[#BC2132]">
+                        <article key={job.id}
+                          className="group cursor-pointer rounded-2xl border border-gray-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#DDA0A8] hover:shadow-lg md:p-6"
+                          onClick={() => setSelectedJob(job)}>
+                          <div className="flex items-start gap-4">
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#FCEDEF] text-xl font-bold text-[#BC2132]">
                               {job.company?.[0]?.toUpperCase() || 'J'}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-semibold text-gray-900">{job.title}</h3>
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                                <h3 className="text-base font-bold tracking-tight text-gray-900 group-hover:text-[#BC2132]">{job.title}</h3>
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
                                   <CircleCheck size={11} /> Verified
                                 </span>
                               </div>
-                              <p className="mt-1 text-sm text-gray-500">{job.company} <span className="px-1.5 text-gray-300">·</span> {job.job_type || 'Not specified'}</p>
-                              <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-400">
-                                {job.location && <span className="flex items-center gap-1"><MapPin size={13} />{job.location}</span>}
-                                {job.created_at && <span className="flex items-center gap-1"><Clock3 size={13} />{new Date(job.created_at).toLocaleDateString('en-KE')}</span>}
+                              <p className="mt-1 text-sm font-medium text-gray-600">{job.company}</p>
+                              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-500">
+                                {job.location && <span className="flex items-center gap-1.5"><MapPin size={13} className="text-[#BC2132]" />{job.location}</span>}
+                                {job.job_type && <span className="flex items-center gap-1.5"><BriefcaseBusiness size={13} />{job.job_type}</span>}
+                                {job.created_at && <span className="flex items-center gap-1.5"><Clock3 size={13} />{new Date(job.created_at).toLocaleDateString('en-KE')}</span>}
                               </div>
-                              {job.description && <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">{job.description}</p>}
+                              {job.description && <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-500">{job.description}</p>}
                               {job.skills?.length > 0 && (
                                 <div className="mt-4 flex flex-wrap gap-2">
-                                  {job.skills.map((skill) => <span key={skill} className="rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] text-gray-600">{skill}</span>)}
+                                  {job.skills.slice(0, 5).map((skill) => (
+                                    <span key={skill} className="rounded-lg bg-[#F5F6F8] px-2.5 py-1.5 text-[11px] font-medium text-gray-600">{skill}</span>
+                                  ))}
+                                  {job.skills.length > 5 && <span className="px-1 py-1.5 text-[11px] text-gray-400">+{job.skills.length - 5} more</span>}
                                 </div>
                               )}
-                              {job.salary_range && <p className="mt-4 text-sm font-semibold text-[#BC2132]">{job.salary_range}</p>}
                             </div>
-                            <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
-                              <button aria-label={saved.includes(job.id) ? 'Remove saved job' : 'Save job'} onClick={() => toggleSavedJob(job.id)}
-                                className={`rounded-xl border p-2.5 transition ${
-                                  saved.includes(job.id)
-                                    ? 'border-[#BC2132] bg-[#FFF0F1] text-[#BC2132]'
-                                    : 'border-gray-200 text-gray-400 hover:border-[#BC2132] hover:text-[#BC2132]'
-                                }`}>
-                                <Bookmark size={17} fill={saved.includes(job.id) ? 'currentColor' : 'none'} />
-                              </button>
-                              <button disabled={appliedJobIds.has(job.id) || applying === job.id} onClick={() => applyToJob(job.id)}
-                                className="rounded-xl bg-[#BC2132] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#9F1C2A] disabled:cursor-not-allowed disabled:bg-gray-300">
+                            <button aria-label={saved.includes(job.id) ? 'Remove saved job' : 'Save job'}
+                              onClick={(event) => { event.stopPropagation(); toggleSavedJob(job.id) }}
+                              className={`shrink-0 rounded-xl border p-2.5 transition ${
+                                saved.includes(job.id)
+                                  ? 'border-[#BC2132] bg-[#FFF0F1] text-[#BC2132]'
+                                  : 'border-gray-200 text-gray-400 hover:border-[#BC2132] hover:text-[#BC2132]'
+                              }`}>
+                              <Bookmark size={17} fill={saved.includes(job.id) ? 'currentColor' : 'none'} />
+                            </button>
+                          </div>
+                          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Salary range</p>
+                              <p className="mt-1 text-sm font-bold text-[#5C1019]">{job.salary_range || 'Not disclosed'}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <button onClick={(event) => { event.stopPropagation(); setSelectedJob(job) }}
+                                className="text-xs font-semibold text-gray-500 hover:text-[#BC2132]">View details</button>
+                              <button disabled={appliedJobIds.has(job.id) || applying === job.id}
+                                onClick={(event) => { event.stopPropagation(); applyToJob(job.id) }}
+                                className="rounded-xl bg-[#BC2132] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#9F1C2A] disabled:cursor-not-allowed disabled:bg-gray-300">
                                 {appliedJobIds.has(job.id) ? 'Applied' : applying === job.id ? 'Applying...' : 'Apply now'}
                               </button>
                             </div>
@@ -669,6 +723,60 @@ function App() {
                   )}
                 </section>
               </>
+            )}
+
+            {selectedJob && (
+              <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#17151A]/55 p-4 backdrop-blur-sm"
+                onClick={() => setSelectedJob(null)}>
+                <section role="dialog" aria-modal="true" aria-labelledby="job-detail-title"
+                  onClick={(event) => event.stopPropagation()}
+                  className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#FCEDEF] text-xl font-bold text-[#BC2132]">
+                        {selectedJob.company?.[0]?.toUpperCase() || 'J'}
+                      </div>
+                      <div>
+                        <h2 id="job-detail-title" className="text-xl font-bold tracking-tight">{selectedJob.title}</h2>
+                        <p className="mt-1 text-sm text-gray-500">{selectedJob.company}</p>
+                        <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                          <CircleCheck size={11} /> Verified employer listing
+                        </span>
+                      </div>
+                    </div>
+                    <button onClick={() => setSelectedJob(null)} aria-label="Close job details"
+                      className="rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50">✕</button>
+                  </div>
+                  <div className="mt-6 grid gap-3 rounded-2xl bg-[#F7F7F9] p-4 sm:grid-cols-3">
+                    <div><p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Location</p><p className="mt-1 text-sm font-semibold">{selectedJob.location || 'Not specified'}</p></div>
+                    <div><p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Employment</p><p className="mt-1 text-sm font-semibold">{selectedJob.job_type || 'Not specified'}</p></div>
+                    <div><p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Salary</p><p className="mt-1 text-sm font-semibold">{selectedJob.salary_range || 'Not disclosed'}</p></div>
+                  </div>
+                  <div className="mt-7">
+                    <h3 className="font-bold">About this role</h3>
+                    <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-600">{selectedJob.description}</p>
+                  </div>
+                  {selectedJob.skills?.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="font-bold">Skills and requirements</h3>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {selectedJob.skills.map((skill) => <span key={skill} className="rounded-lg bg-[#F5F6F8] px-3 py-2 text-xs font-medium text-gray-600">{skill}</span>)}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-gray-100 pt-5">
+                    <button onClick={() => toggleSavedJob(selectedJob.id)}
+                      className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 hover:border-[#BC2132] hover:text-[#BC2132]">
+                      {saved.includes(selectedJob.id) ? 'Remove saved job' : 'Save this job'}
+                    </button>
+                    <button disabled={appliedJobIds.has(selectedJob.id) || applying === selectedJob.id}
+                      onClick={() => applyToJob(selectedJob.id)}
+                      className="rounded-xl bg-[#BC2132] px-6 py-3 text-sm font-bold text-white hover:bg-[#9F1C2A] disabled:bg-gray-300">
+                      {appliedJobIds.has(selectedJob.id) ? 'Already applied' : applying === selectedJob.id ? 'Applying...' : 'Apply for this role'}
+                    </button>
+                  </div>
+                </section>
+              </div>
             )}
 
             <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-200/80 py-5 text-[11px] text-gray-400">
