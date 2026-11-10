@@ -218,3 +218,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+backend/instance/
+
+# Frontend local files and generated output
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+frontend/node_modules/
+frontend/dist/
+frontend/src/*.backup-*
+frontend/src/*.pre-final-layout-*

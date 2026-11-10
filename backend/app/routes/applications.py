@@ -19,6 +19,9 @@ def apply_for_job():
     if not job:
         return jsonify({"error": "Job not found"}), 404
 
+    if not job.is_verified:
+        return jsonify({"error": "This job is not available for applications"}), 403
+
     existing = Application.query.filter_by(
         job_id=job.id,
         user_id=user.id
