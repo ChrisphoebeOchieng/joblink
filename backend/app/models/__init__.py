@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
+
 from app.extensions import db
+
 
 class User(db.Model):
     __tablename__ = "users"
@@ -10,7 +12,11 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(30), nullable=False, default="job_seeker")
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
 
 class Employer(db.Model):
     __tablename__ = "employers"
@@ -21,6 +27,7 @@ class Employer(db.Model):
     location = db.Column(db.String(150))
     description = db.Column(db.Text)
     is_verified = db.Column(db.Boolean, default=False)
+
 
 class Job(db.Model):
     __tablename__ = "jobs"
@@ -35,7 +42,24 @@ class Job(db.Model):
     salary_range = db.Column(db.String(100))
     skills = db.Column(db.JSON, default=list)
     is_verified = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Listing source and external application details
+    source_type = db.Column(
+        db.String(20),
+        nullable=False,
+        default="platform"
+    )
+    source_name = db.Column(db.String(150))
+    application_url = db.Column(db.String(2048))
+    application_deadline = db.Column(db.Date)
+    work_arrangement = db.Column(db.String(30))
+    last_checked_at = db.Column(db.DateTime)
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
 
 class Application(db.Model):
     __tablename__ = "applications"
@@ -44,13 +68,22 @@ class Application(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey("jobs.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     status = db.Column(db.String(40), default="Submitted")
-    applied_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    applied_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
     applicant = db.relationship("User", foreign_keys=[user_id])
     job = db.relationship("Job", foreign_keys=[job_id])
 
     __table_args__ = (
-        db.UniqueConstraint("job_id", "user_id", name="unique_job_application"),
+        db.UniqueConstraint(
+            "job_id",
+            "user_id",
+            name="unique_job_application"
+        ),
     )
+
 
 class Notification(db.Model):
     __tablename__ = "notifications"
@@ -59,7 +92,10 @@ class Notification(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     message = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
 
 
 class SavedJob(db.Model):
@@ -68,8 +104,15 @@ class SavedJob(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     job_id = db.Column(db.Integer, db.ForeignKey("jobs.id"), nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
 
     __table_args__ = (
-        db.UniqueConstraint("user_id", "job_id", name="unique_saved_job"),
+        db.UniqueConstraint(
+            "user_id",
+            "job_id",
+            name="unique_saved_job"
+        ),
     )

@@ -6,6 +6,7 @@ import {
   AlertCircle, Send, UserRound
 } from 'lucide-react'
 import { apiRequest } from './api'
+import ThemeToggle from './ThemeToggle'
 
 const navigation = [
   { label: 'Overview', icon: LayoutDashboard },
@@ -253,6 +254,7 @@ function EmployerWorkspace({ user, onLogout }) {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <span className="hidden text-sm text-[#82766A] sm:block">Welcome, {user.first_name}</span>
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EDE3D4] text-sm font-semibold text-[#755632]">
             {(user.first_name || 'E').charAt(0).toUpperCase()}

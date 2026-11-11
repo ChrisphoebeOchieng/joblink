@@ -5,6 +5,7 @@ import {
   LogOut, Eye, EyeOff, Sparkles, Compass, Globe2
 } from 'lucide-react'
 import { apiRequest } from './api'
+import ThemeToggle from './ThemeToggle'
 import EmployerWorkspace from './EmployerWorkspace'
 import AdminWorkspace from './AdminWorkspace'
 
@@ -143,6 +144,7 @@ function PublicSite({ onAuth, jobs, loading, search, setSearch, location, setLoc
             <a href="#employers" className="nav-link">For employers</a>
           </nav>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <button onClick={() => onAuth('login')} className="hidden px-3 py-2 text-sm font-semibold text-[#5E4A34] hover:text-[#9A6B2D] sm:block">Log in</button>
             <button onClick={() => onAuth('register')} className="btn-primary !px-5 !py-2.5">Get started <ArrowUpRight size={15} /></button>
           </div>
@@ -223,16 +225,28 @@ function PublicSite({ onAuth, jobs, loading, search, setSearch, location, setLoc
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2"><h3 className="font-serif text-lg font-bold">{job.title}</h3><span className="verified-pill"><CheckCircle2 size={12} /> Verified</span></div>
                       <p className="mt-1 text-sm text-[#806F5C]">{job.company}</p>
+                      {job.source_type === 'external' && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[#F4E8D5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#81551E]">External listing</span>
+                          {job.source_name && <span className="text-xs text-[#91816E]">Source: {job.source_name}</span>}
+                        </div>
+                      )}
                       <div className="mt-3 flex flex-wrap gap-3 text-xs text-[#91816E]">
                         {job.location && <span><MapPin size={13} className="mr-1 inline" />{job.location}</span>}
                         {job.job_type && <span><BriefcaseBusiness size={13} className="mr-1 inline" />{job.job_type}</span>}
+                        {job.work_arrangement && <span>{job.work_arrangement}</span>}
+                        {job.application_deadline && <span>Closes {new Date(`${job.application_deadline}T00:00:00`).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
                       </div>
                     </div>
                   </div>
                   <p className="mt-4 line-clamp-2 text-sm leading-6 text-[#857765]">{job.description}</p>
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEE5D9] pt-4">
                     <span className="text-sm font-semibold text-[#72501F]">{job.salary_range || 'Salary not disclosed'}</span>
-                    <button onClick={() => onAuth('login')} className="btn-outline">View opportunity <ArrowRight size={14} /></button>
+                    {job.source_type === 'external' && job.application_url ? (
+                      <a href={job.application_url} target="_blank" rel="noopener noreferrer" className="btn-primary !px-4 !py-2.5">Apply externally <ArrowUpRight size={14} /></a>
+                    ) : (
+                      <button onClick={() => onAuth('login')} className="btn-outline">View opportunity <ArrowRight size={14} /></button>
+                    )}
                   </div>
                 </article>
               ))}
@@ -376,7 +390,7 @@ function JobSeekerWorkspace({ user, onLogout }) {
       <main className="workspace-main">
         <header className="workspace-topbar">
           <div className="flex items-center gap-3"><button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-[#75634F] lg:hidden"><Menu size={20} /></button><div><p className="text-[11px] text-[#9B8A76]">{new Date().toLocaleDateString('en-KE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p><p className="mt-0.5 text-sm font-semibold">Welcome back, {user.first_name}</p></div></div>
-          <button onClick={() => setActive('Notifications')} className="relative rounded-xl border border-[#E9DFD2] bg-white p-2.5 text-[#806C53]"><Bell size={17} />{notifications.some(item => !item.is_read) && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#B7863E]" />}</button>
+          <div className="flex items-center gap-2"><ThemeToggle /><button onClick={() => setActive('Notifications')} className="relative rounded-xl border border-[#E9DFD2] bg-white p-2.5 text-[#806C53]"><Bell size={17} />{notifications.some(item => !item.is_read) && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#B7863E]" />}</button></div>
         </header>
         <div className="workspace-content">
           {error && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
@@ -417,11 +431,175 @@ function JobSeekerWorkspace({ user, onLogout }) {
 }
 
 function JobList({ jobs, saved, appliedIds, onSave, onApply, onSelect, applying, loading }) {
-  return <section className="mt-8"><div className="section-heading"><div><p className="eyebrow">Verified listings</p><h2 className="section-title">Opportunities to explore.</h2></div><span className="text-xs text-[#9A8A76]">{jobs.length} roles</span></div><div className="mt-5 grid gap-4 lg:grid-cols-2">{loading ? <div className="surface-card p-8 text-sm text-[#8C7A64]">Loading opportunities…</div> : jobs.length ? jobs.map(job => <article key={job.id} className="surface-card p-5 transition hover:-translate-y-0.5 hover:shadow-lg sm:p-6"><div className="flex items-start gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F0E4D1] font-serif text-lg font-bold text-[#81551E]">{job.company?.[0]?.toUpperCase() || 'J'}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><button onClick={() => onSelect(job)} className="text-left font-serif text-lg font-bold hover:text-[#81551E]">{job.title}</button><span className="verified-pill"><CheckCircle2 size={12} /> Verified</span></div><p className="mt-1 text-sm text-[#806F5C]">{job.company}</p><div className="mt-3 flex flex-wrap gap-3 text-xs text-[#91816E]">{job.location && <span><MapPin size={13} className="mr-1 inline" />{job.location}</span>}{job.job_type && <span><BriefcaseBusiness size={13} className="mr-1 inline" />{job.job_type}</span>}</div></div><button aria-label="Save job" onClick={() => onSave(job.id)} className={`rounded-lg border p-2 ${saved.includes(job.id) ? 'border-[#C5A16B] bg-[#F6EBDD] text-[#81551E]' : 'border-[#E9DFD2] text-[#9A8A76]'}`}><Bookmark size={16} fill={saved.includes(job.id) ? 'currentColor' : 'none'} /></button></div><p className="mt-4 line-clamp-2 text-sm leading-6 text-[#857765]">{job.description}</p>{job.skills?.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{job.skills.slice(0, 4).map(skill => <span key={skill} className="skill-chip">{skill}</span>)}</div>}<div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEE5D9] pt-4"><span className="text-sm font-semibold text-[#72501F]">{job.salary_range || 'Salary not disclosed'}</span><div className="flex gap-2"><button onClick={() => onSelect(job)} className="btn-outline">Details</button><button disabled={appliedIds.has(job.id) || applying === job.id} onClick={() => onApply(job.id)} className="btn-primary !px-4 !py-2.5 disabled:opacity-50">{appliedIds.has(job.id) ? 'Applied' : applying === job.id ? 'Applying…' : 'Apply'}</button></div></div></article>) : <div className="surface-card p-10 text-center lg:col-span-2"><BriefcaseBusiness className="mx-auto text-[#B18A53]" size={28} /><h3 className="mt-3 font-serif text-xl font-bold">No opportunities to show</h3><p className="mt-2 text-sm text-[#8C7A64]">Try adjusting your filters or check back later.</p></div>}</div></section>
+  return (
+    <section className="mt-8">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Verified listings</p>
+          <h2 className="section-title">Opportunities to explore.</h2>
+        </div>
+        <span className="text-xs text-[#9A8A76]">{jobs.length} roles</span>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        {loading ? (
+          <div className="surface-card p-8 text-sm text-[#8C7A64]">Loading opportunities…</div>
+        ) : jobs.length ? jobs.map(job => {
+          const external = job.source_type === 'external' && Boolean(job.application_url)
+
+          return (
+            <article key={job.id} className="surface-card p-5 transition hover:-translate-y-0.5 hover:shadow-lg sm:p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F0E4D1] font-serif text-lg font-bold text-[#81551E]">
+                  {job.company?.[0]?.toUpperCase() || 'J'}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button onClick={() => onSelect(job)} className="text-left font-serif text-lg font-bold hover:text-[#81551E]">
+                      {job.title}
+                    </button>
+                    <span className="verified-pill"><CheckCircle2 size={12} /> Verified</span>
+                    {external && <span className="rounded-full bg-[#F4E8D5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#81551E]">External</span>}
+                  </div>
+
+                  <p className="mt-1 text-sm text-[#806F5C]">{job.company}</p>
+
+                  {external && job.source_name && (
+                    <p className="mt-1 text-xs text-[#91816E]">Source: {job.source_name}</p>
+                  )}
+
+                  <div className="mt-3 flex flex-wrap gap-3 text-xs text-[#91816E]">
+                    {job.location && <span><MapPin size={13} className="mr-1 inline" />{job.location}</span>}
+                    {job.job_type && <span><BriefcaseBusiness size={13} className="mr-1 inline" />{job.job_type}</span>}
+                    {job.work_arrangement && <span>{job.work_arrangement}</span>}
+                    {job.application_deadline && (
+                      <span>Closes {new Date(`${job.application_deadline}T00:00:00`).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  aria-label="Save job"
+                  onClick={() => onSave(job.id)}
+                  className={`rounded-lg border p-2 ${saved.includes(job.id) ? 'border-[#C5A16B] bg-[#F6EBDD] text-[#81551E]' : 'border-[#E9DFD2] text-[#9A8A76]'}`}
+                >
+                  <Bookmark size={16} fill={saved.includes(job.id) ? 'currentColor' : 'none'} />
+                </button>
+              </div>
+
+              <p className="mt-4 line-clamp-2 text-sm leading-6 text-[#857765]">{job.description}</p>
+
+              {job.skills?.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {job.skills.slice(0, 4).map(skill => <span key={skill} className="skill-chip">{skill}</span>)}
+                </div>
+              )}
+
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEE5D9] pt-4">
+                <span className="text-sm font-semibold text-[#72501F]">{job.salary_range || 'Salary not disclosed'}</span>
+                <div className="flex gap-2">
+                  <button onClick={() => onSelect(job)} className="btn-outline">Details</button>
+                  {external ? (
+                    <a href={job.application_url} target="_blank" rel="noopener noreferrer" className="btn-primary !px-4 !py-2.5">
+                      Apply externally <ArrowUpRight size={14} />
+                    </a>
+                  ) : (
+                    <button
+                      disabled={appliedIds.has(job.id) || applying === job.id}
+                      onClick={() => onApply(job.id)}
+                      className="btn-primary !px-4 !py-2.5 disabled:opacity-50"
+                    >
+                      {appliedIds.has(job.id) ? 'Applied' : applying === job.id ? 'Applying…' : 'Apply'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </article>
+          )
+        }) : (
+          <div className="surface-card p-10 text-center lg:col-span-2">
+            <BriefcaseBusiness className="mx-auto text-[#B18A53]" size={28} />
+            <h3 className="mt-3 font-serif text-xl font-bold">No opportunities to show</h3>
+            <p className="mt-2 text-sm text-[#8C7A64]">Try adjusting your filters or check back later.</p>
+          </div>
+        )}
+      </div>
+    </section>
+  )
 }
 
 function JobModal({ job, saved, applied, applying, onClose, onSave, onApply }) {
-  return <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#241B12]/60 p-4 backdrop-blur-sm" onClick={onClose}><section role="dialog" aria-modal="true" onClick={event => event.stopPropagation()} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[25px] bg-[#FFFCF7] p-6 shadow-2xl sm:p-8"><div className="flex justify-between gap-4"><div><p className="eyebrow">Verified opportunity</p><h2 className="mt-2 font-serif text-2xl font-bold">{job.title}</h2><p className="mt-1 text-sm text-[#887865]">{job.company}</p></div><button onClick={onClose} className="h-fit rounded-lg border border-[#E9DFD2] p-2 text-[#887865]"><X size={18} /></button></div><div className="mt-6 grid gap-3 rounded-xl bg-[#F3EBDD] p-4 sm:grid-cols-3"><div><p className="eyebrow">Location</p><p className="mt-1 text-sm font-semibold">{job.location || 'Not specified'}</p></div><div><p className="eyebrow">Employment</p><p className="mt-1 text-sm font-semibold">{job.job_type || 'Not specified'}</p></div><div><p className="eyebrow">Salary</p><p className="mt-1 text-sm font-semibold">{job.salary_range || 'Not disclosed'}</p></div></div><h3 className="mt-7 font-serif text-lg font-bold">About this role</h3><p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#766957]">{job.description}</p>{job.skills?.length > 0 && <><h3 className="mt-6 font-serif text-lg font-bold">Skills and requirements</h3><div className="mt-3 flex flex-wrap gap-2">{job.skills.map(skill => <span className="skill-chip" key={skill}>{skill}</span>)}</div></>}<div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-[#E9DFD2] pt-5"><button onClick={onSave} className="btn-outline">{saved ? 'Remove saved job' : 'Save opportunity'}</button><button disabled={applied || applying} onClick={onApply} className="btn-primary disabled:opacity-50">{applied ? 'Already applied' : applying ? 'Submitting…' : 'Apply for this role'} <ArrowRight size={15} /></button></div></section></div>
+  const external = job.source_type === 'external' && Boolean(job.application_url)
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#241B12]/60 p-4 backdrop-blur-sm" onClick={onClose}>
+      <section
+        role="dialog"
+        aria-modal="true"
+        onClick={event => event.stopPropagation()}
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[25px] bg-[#FFFCF7] p-6 shadow-2xl sm:p-8"
+      >
+        <div className="flex justify-between gap-4">
+          <div>
+            <p className="eyebrow">{external ? 'External opportunity' : 'Verified opportunity'}</p>
+            <h2 className="mt-2 font-serif text-2xl font-bold">{job.title}</h2>
+            <p className="mt-1 text-sm text-[#887865]">{job.company}</p>
+            {external && job.source_name && <p className="mt-1 text-xs text-[#91816E]">Listed by {job.source_name}</p>}
+          </div>
+          <button onClick={onClose} className="h-fit rounded-lg border border-[#E9DFD2] p-2 text-[#887865]" aria-label="Close details">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="mt-6 grid gap-3 rounded-xl bg-[#F3EBDD] p-4 sm:grid-cols-2">
+          <div><p className="eyebrow">Location</p><p className="mt-1 text-sm font-semibold">{job.location || 'Not specified'}</p></div>
+          <div><p className="eyebrow">Employment</p><p className="mt-1 text-sm font-semibold">{job.job_type || 'Not specified'}</p></div>
+          <div><p className="eyebrow">Salary</p><p className="mt-1 text-sm font-semibold">{job.salary_range || 'Not disclosed'}</p></div>
+          <div><p className="eyebrow">Work arrangement</p><p className="mt-1 text-sm font-semibold">{job.work_arrangement || 'Not specified'}</p></div>
+          {job.application_deadline && (
+            <div className="sm:col-span-2">
+              <p className="eyebrow">Application deadline</p>
+              <p className="mt-1 text-sm font-semibold">
+                {new Date(`${job.application_deadline}T00:00:00`).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <h3 className="mt-7 font-serif text-lg font-bold">About this role</h3>
+        <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#766957]">{job.description}</p>
+
+        {job.skills?.length > 0 && (
+          <>
+            <h3 className="mt-6 font-serif text-lg font-bold">Skills and requirements</h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {job.skills.map(skill => <span className="skill-chip" key={skill}>{skill}</span>)}
+            </div>
+          </>
+        )}
+
+        {external && (
+          <p className="mt-6 rounded-xl border border-[#E9DFD2] bg-[#FBF7F0] p-4 text-xs leading-5 text-[#806F5C]">
+            This opportunity is listed from an external source. Your application will be submitted through the employer's original application page, not through JobLink.
+          </p>
+        )}
+
+        <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-[#E9DFD2] pt-5">
+          <button onClick={onSave} className="btn-outline">{saved ? 'Remove saved job' : 'Save opportunity'}</button>
+          {external ? (
+            <a href={job.application_url} target="_blank" rel="noopener noreferrer" className="btn-primary">
+              Apply on employer site <ArrowUpRight size={15} />
+            </a>
+          ) : (
+            <button disabled={applied || applying} onClick={onApply} className="btn-primary disabled:opacity-50">
+              {applied ? 'Already applied' : applying ? 'Submitting…' : 'Apply for this role'} <ArrowRight size={15} />
+            </button>
+          )}
+        </div>
+      </section>
+    </div>
+  )
 }
 
 function EmptyState({ title, detail, action, onAction }) {

@@ -5,6 +5,7 @@ import {
   AlertCircle, Search, FileCheck2, MapPin, ChevronRight
 } from 'lucide-react'
 import { apiRequest } from './api'
+import ThemeToggle from './ThemeToggle'
 
 const navigation = [
   { label: 'Overview', icon: LayoutDashboard },
@@ -137,7 +138,7 @@ function AdminWorkspace({ user, onLogout }) {
     return (
       <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-[#EAE4DA] bg-[#FBF9F5]/95 px-5 backdrop-blur sm:px-8">
         <div className="flex items-center gap-3"><button className="rounded-lg p-2 text-[#66594D] lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu size={21} /></button><div><p className="font-serif text-xl text-[#3C2E24]">{active}</p><p className="hidden text-xs text-[#9B9084] sm:block">Monitor and manage the JobLink platform</p></div></div>
-        <div className="flex items-center gap-3"><span className="hidden text-sm text-[#82766A] sm:block">Administrator</span><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EDE3D4] text-sm font-semibold text-[#755632]">{(user.first_name || 'A').charAt(0).toUpperCase()}</span></div>
+        <div className="flex items-center gap-3"><ThemeToggle /><span className="hidden text-sm text-[#82766A] sm:block">Administrator</span><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EDE3D4] text-sm font-semibold text-[#755632]">{(user.first_name || 'A').charAt(0).toUpperCase()}</span></div>
       </header>
     )
   }
