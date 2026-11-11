@@ -1,42 +1,50 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  LayoutDashboard, Search, Bookmark, FileText, Bell,
-  MapPin, Clock3, ArrowUpRight, Sparkles, Menu, CircleCheck,
-  LogOut, BriefcaseBusiness, Eye, EyeOff, SlidersHorizontal
+  ArrowRight, ArrowUpRight, Search, MapPin, BriefcaseBusiness,
+  Bookmark, FileText, Bell, Menu, X, CheckCircle2,
+  LogOut, Eye, EyeOff, Sparkles, Compass, Globe2
 } from 'lucide-react'
 import { apiRequest } from './api'
 import EmployerWorkspace from './EmployerWorkspace'
 import AdminWorkspace from './AdminWorkspace'
 
-const navigation = [
-  { label: 'Overview', icon: LayoutDashboard },
-  { label: 'Find jobs', icon: Search },
-  { label: 'Applications', icon: FileText },
-  { label: 'Saved jobs', icon: Bookmark },
+const categories = [
+  { name: 'Technology', count: 'Software, IT & Data', search: 'software' },
+  { name: 'Business', count: 'Operations & Strategy', search: 'business' },
+  { name: 'Finance', count: 'Accounting & Banking', search: 'finance' },
+  { name: 'Marketing', count: 'Brand & Communications', search: 'marketing' },
+  { name: 'Design', count: 'Creative & Product', search: 'design' },
+  { name: 'Customer service', count: 'Support & Experience', search: 'customer' },
 ]
 
-function AuthScreen({ onAuthenticated }) {
+const jobTypes = ['All', 'Full-time', 'Part-time', 'Contract', 'Internship', 'Remote']
+
+function Brand({ light = false }) {
+  return (
+    <a href="/" className={`inline-flex items-center gap-2.5 ${light ? 'text-white' : 'text-[#30251B]'}`}>
+      <span className={`flex h-10 w-10 items-center justify-center rounded-xl font-serif text-xl font-bold ${light ? 'bg-[#D8A44B] text-[#30251B]' : 'bg-[#81551E] text-[#FFF9EF]'}`}>J</span>
+      <span className="font-serif text-[25px] font-bold tracking-tight">JobLink<span className="text-[#B7863E]">.</span></span>
+    </a>
+  )
+}
+
+function AuthScreen({ onAuthenticated, onClose }) {
   const [mode, setMode] = useState('login')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    password: '',
-    role: 'job_seeker',
+    first_name: '', last_name: '', email: '', password: '', role: 'job_seeker'
   })
 
-  const update = (event) => {
-    setForm({ ...form, [event.target.name]: event.target.value })
+  function update(event) {
+    setForm(current => ({ ...current, [event.target.name]: event.target.value }))
   }
 
   async function submit(event) {
     event.preventDefault()
     setError('')
     setLoading(true)
-
     try {
       if (mode === 'register') {
         await apiRequest('/auth/register', {
@@ -44,15 +52,10 @@ function AuthScreen({ onAuthenticated }) {
           body: JSON.stringify(form),
         })
       }
-
       const result = await apiRequest('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-        }),
+        body: JSON.stringify({ email: form.email, password: form.password }),
       })
-
       localStorage.setItem('joblink_token', result.access_token)
       localStorage.setItem('joblink_user', JSON.stringify(result.user))
       onAuthenticated(result.user)
@@ -64,731 +67,405 @@ function AuthScreen({ onAuthenticated }) {
   }
 
   return (
-    <main className="flex min-h-screen bg-white">
-      <section className="hidden w-1/2 flex-col justify-between overflow-hidden bg-[#5C1019] p-12 text-white lg:flex">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-xl font-bold text-[#BC2132]">J</div>
-          <span className="text-2xl font-bold tracking-tight">joblink<span className="text-pink-300">.</span></span>
-        </div>
-        <div className="relative z-10 max-w-lg">
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs text-pink-100">
-            <Sparkles size={14} /> OPPORTUNITY STARTS HERE
-          </span>
-          <h1 className="text-5xl font-semibold leading-tight tracking-tight">
-            Your next chapter begins with one connection.
-          </h1>
-          <p className="mt-6 max-w-md text-base leading-7 text-white/65">
-            Discover opportunities, connect with employers and take the next step in your career.
-          </p>
-        </div>
-        <div className="relative">
-          <div className="absolute -bottom-40 -right-20 h-80 w-80 rounded-full border border-white/10" />
-          <p className="text-xs text-white/45">© 2026 JobLink · Built for opportunity in Kenya.</p>
-        </div>
-      </section>
-
-      <section className="flex flex-1 items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md">
-          <div className="mb-10 lg:hidden">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#BC2132] font-bold text-white">J</div>
-              <span className="text-2xl font-bold">joblink<span className="text-[#BC2132]">.</span></span>
-            </div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-[#241B12]/55 p-4 backdrop-blur-sm">
+      <section className="relative grid w-full max-w-4xl overflow-hidden rounded-[28px] bg-[#FFFCF7] shadow-2xl md:grid-cols-[0.9fr_1.1fr]">
+        <button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 z-10 rounded-full bg-white/90 p-2 text-[#766958] shadow-sm hover:bg-[#F4EBDD]">
+          <X size={18} />
+        </button>
+        <div className="relative hidden min-h-[610px] flex-col justify-between overflow-hidden bg-[#4A3826] p-10 text-white md:flex">
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(31,24,16,.2),rgba(31,24,16,.92)),url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1100&q=85')] bg-cover bg-center" />
+          <div className="relative"><Brand light /></div>
+          <div className="relative">
+            <span className="eyebrow text-[#E8C78D]">A better way to work</span>
+            <h2 className="mt-4 max-w-sm font-serif text-4xl leading-tight">Your next chapter begins with the right connection.</h2>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-white/75">Discover meaningful opportunities and connect with employers shaping Kenya's future.</p>
           </div>
-
-          <p className="text-xs font-semibold uppercase tracking-[2px] text-[#BC2132]">
-            {mode === 'login' ? 'Welcome back' : 'Get started'}
-          </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-gray-900">
-            {mode === 'login' ? 'Sign in to JobLink' : 'Create your account'}
-          </h2>
-          <p className="mt-2 text-sm text-gray-500">
-            {mode === 'login'
-              ? 'Continue your career journey.'
-              : 'Join Kenya’s growing professional network.'}
-          </p>
-
-          <form onSubmit={submit} className="mt-8 space-y-5">
-            {mode === 'register' && (
-              <>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="text-xs font-medium text-gray-600">
-                    First name
-                    <input required name="first_name" value={form.first_name} onChange={update} className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#BC2132]" placeholder="First name" />
+          <p className="relative text-xs text-white/55">© 2026 JobLink · Built for opportunity in Kenya.</p>
+        </div>
+        <div className="flex items-center px-7 py-12 sm:px-12">
+          <div className="mx-auto w-full max-w-md">
+            <div className="mb-8 md:hidden"><Brand /></div>
+            <p className="eyebrow">{mode === 'login' ? 'Welcome back' : 'Join the community'}</p>
+            <h2 className="mt-3 font-serif text-3xl font-bold text-[#30251B]">{mode === 'login' ? 'Sign in to JobLink' : 'Create your account'}</h2>
+            <p className="mt-2 text-sm leading-6 text-[#887B6B]">{mode === 'login' ? 'Pick up where your career journey left off.' : 'Build your profile and find your next opportunity.'}</p>
+            <form onSubmit={submit} className="mt-8 space-y-4">
+              {mode === 'register' && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="field-label">First name<input required name="first_name" value={form.first_name} onChange={update} placeholder="First name" className="field-input" /></label>
+                    <label className="field-label">Last name<input required name="last_name" value={form.last_name} onChange={update} placeholder="Last name" className="field-input" /></label>
+                  </div>
+                  <label className="field-label">I am joining as
+                    <select name="role" value={form.role} onChange={update} className="field-input">
+                      <option value="job_seeker">Job seeker</option>
+                      <option value="employer">Employer</option>
+                    </select>
                   </label>
-                  <label className="text-xs font-medium text-gray-600">
-                    Last name
-                    <input required name="last_name" value={form.last_name} onChange={update} className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#BC2132]" placeholder="Last name" />
-                  </label>
+                </>
+              )}
+              <label className="field-label">Email address<input required type="email" name="email" value={form.email} onChange={update} placeholder="you@example.com" autoComplete="email" className="field-input" /></label>
+              <label className="field-label">Password
+                <div className="relative">
+                  <input required minLength={8} type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={update} placeholder="At least 8 characters" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} className="field-input pr-12" />
+                  <button type="button" onClick={() => setShowPassword(value => !value)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9B8D7B]">{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button>
                 </div>
-                <label className="block text-xs font-medium text-gray-600">
-                  Account type
-                  <select name="role" value={form.role} onChange={update} className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#BC2132]">
-                    <option value="job_seeker">Job seeker</option>
-                    <option value="employer">Employer</option>
-                  </select>
-                </label>
-              </>
-            )}
-
-            <label className="block text-xs font-medium text-gray-600">
-              Email address
-              <input required type="email" name="email" value={form.email} onChange={update} autoComplete="email" className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#BC2132]" placeholder="you@example.com" />
-            </label>
-
-            <label className="block text-xs font-medium text-gray-600">
-              Password
-              <div className="mt-2 flex items-center rounded-xl border border-gray-200 px-4 focus-within:border-[#BC2132]">
-                <input required minLength={8} type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={update} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} className="w-full py-3 text-sm outline-none" placeholder="At least 8 characters" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400" aria-label="Toggle password visibility">
-                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
-              </div>
-            </label>
-
-            {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-
-            <button disabled={loading} className="w-full rounded-xl bg-[#BC2132] py-3.5 text-sm font-semibold text-white transition hover:bg-[#5C1019] disabled:opacity-60">
-              {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Create account'}
-            </button>
-          </form>
-
-          <p className="mt-7 text-center text-sm text-gray-500">
-            {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}
-            <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }} className="ml-1 font-semibold text-[#BC2132] hover:underline">
-              {mode === 'login' ? 'Create account' : 'Sign in'}
-            </button>
-          </p>
+              </label>
+              {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+              <button disabled={loading} className="btn-primary w-full justify-center py-3.5">{loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'} <ArrowRight size={16} /></button>
+            </form>
+            <p className="mt-7 text-center text-sm text-[#887B6B]">
+              {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}
+              <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }} className="ml-1 font-semibold text-[#81551E] hover:underline">{mode === 'login' ? 'Create one' : 'Sign in'}</button>
+            </p>
+          </div>
         </div>
       </section>
-    </main>
+    </div>
   )
 }
 
-function App() {
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('joblink_user'))
-    } catch {
-      return null
-    }
-  })
+function PublicSite({ onAuth, jobs, loading, search, setSearch, location, setLocation }) {
+  const filtered = useMemo(() => jobs.filter(job => {
+    const q = search.toLowerCase()
+    const place = location.toLowerCase()
+    return (!q || `${job.title} ${job.company} ${job.description} ${(job.skills || []).join(' ')}`.toLowerCase().includes(q))
+      && (!place || (job.location || '').toLowerCase().includes(place))
+  }), [jobs, search, location])
+
+  return (
+    <div className="min-h-screen bg-[#FBF7F0] text-[#30251B]">
+      <header className="site-header">
+        <div className="page-shell flex h-[82px] items-center justify-between">
+          <Brand />
+          <nav className="hidden items-center gap-9 md:flex">
+            <a href="#opportunities" className="nav-link">Find jobs</a>
+            <a href="#categories" className="nav-link">Explore careers</a>
+            <a href="#employers" className="nav-link">For employers</a>
+          </nav>
+          <div className="flex items-center gap-3">
+            <button onClick={() => onAuth('login')} className="hidden px-3 py-2 text-sm font-semibold text-[#5E4A34] hover:text-[#9A6B2D] sm:block">Log in</button>
+            <button onClick={() => onAuth('register')} className="btn-primary !px-5 !py-2.5">Get started <ArrowUpRight size={15} /></button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section className="hero-wrap">
+          <div className="hero-photo" />
+          <div className="page-shell relative z-10 grid min-h-[590px] items-center gap-10 py-16 lg:grid-cols-[1.05fr_.95fr]">
+            <div className="max-w-2xl text-white">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[.17em] text-[#F3D9A9] backdrop-blur">
+                <Sparkles size={14} /> Your career, thoughtfully connected
+              </span>
+              <h1 className="mt-7 font-serif text-5xl font-bold leading-[1.08] tracking-tight sm:text-6xl lg:text-[68px]">Find work that <span className="italic text-[#E9C78F]">moves you.</span></h1>
+              <p className="mt-6 max-w-lg text-base leading-8 text-white/80">Discover verified opportunities, connect with ambitious companies and take your next step with confidence.</p>
+              <div className="mt-9 flex flex-wrap gap-5 text-xs text-white/75">
+                <span className="flex items-center gap-2"><CheckCircle2 size={15} className="text-[#E9C78F]" /> Verified employers</span>
+                <span className="flex items-center gap-2"><Globe2 size={15} className="text-[#E9C78F]" /> Opportunities across Kenya</span>
+              </div>
+            </div>
+            <div className="rounded-[25px] border border-white/50 bg-[#FFFCF7] p-5 shadow-[0_25px_80px_rgba(0,0,0,.25)] sm:p-7">
+              <p className="eyebrow">Start your search</p>
+              <h2 className="mt-2 font-serif text-2xl font-bold">The right opportunity is out there.</h2>
+              <p className="mt-2 text-sm text-[#8B7C6A]">Search roles that match your skills and ambition.</p>
+              <form onSubmit={event => { event.preventDefault(); document.getElementById('opportunities')?.scrollIntoView({ behavior: 'smooth' }) }} className="mt-6 space-y-3">
+                <label className="search-field"><Search size={18} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Job title, skill or company" /></label>
+                <label className="search-field"><MapPin size={18} /><input value={location} onChange={event => setLocation(event.target.value)} placeholder="City, county or remote" /></label>
+                <button className="btn-primary w-full justify-center py-3.5">Explore opportunities <ArrowRight size={16} /></button>
+              </form>
+              <p className="mt-4 text-center text-[11px] text-[#9A8D7C]">Find your next role, one search at a time.</p>
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#FBF7F0] to-transparent" />
+        </section>
+
+        <section className="page-shell -mt-1 py-12">
+          <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[#E9DFD0] bg-[#F5EBDD] p-5 sm:grid-cols-4 sm:p-7">
+            {[
+              ['A considered search', 'Find roles that fit your goals'],
+              ['Trusted listings', 'Opportunities from reviewed employers'],
+              ['Career visibility', 'Keep your applications organised'],
+              ['Local opportunity', 'Built around the Kenyan market'],
+            ].map(([title, detail]) => <div key={title} className="px-2 py-2"><p className="font-serif text-lg font-bold">{title}</p><p className="mt-1 text-xs leading-5 text-[#8B7C6A]">{detail}</p></div>)}
+          </div>
+        </section>
+
+        <section id="categories" className="page-shell py-14">
+          <div className="section-heading">
+            <div><p className="eyebrow">Explore your path</p><h2 className="section-title">Find your field.</h2><p className="section-copy">Explore opportunities across the industries shaping tomorrow.</p></div>
+            <a href="#opportunities" className="text-sm font-semibold text-[#81551E]">Browse all jobs <ArrowRight size={15} className="ml-1 inline" /></a>
+          </div>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {categories.map((item, index) => (
+              <button key={item.name} onClick={() => { setSearch(item.search); document.getElementById('opportunities')?.scrollIntoView({ behavior: 'smooth' }) }} className="category-card text-left">
+                <span className="text-[11px] font-semibold tracking-widest text-[#B18A53]">0{index + 1}</span>
+                <span className="mt-5 block font-serif text-xl font-bold">{item.name}</span>
+                <span className="mt-1 block text-xs text-[#958675]">{item.count}</span>
+                <ArrowUpRight className="absolute right-5 top-5 text-[#A9854F]" size={18} />
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section id="opportunities" className="bg-[#F2E9DC] py-16">
+          <div className="page-shell">
+            <div className="section-heading">
+              <div><p className="eyebrow">Curated opportunities</p><h2 className="section-title">Roles worth exploring.</h2><p className="section-copy">Discover opportunities posted by verified employers.</p></div>
+              <span className="text-xs text-[#8C7A64]">{filtered.length} opportunities</span>
+            </div>
+            <div className="mt-7 grid gap-4 lg:grid-cols-2">
+              {loading ? <div className="surface-card p-8 text-sm text-[#8C7A64]">Loading opportunities…</div> : filtered.length === 0 ? (
+                <div className="surface-card p-10 text-center lg:col-span-2"><BriefcaseBusiness className="mx-auto text-[#B18A53]" size={28} /><h3 className="mt-3 font-serif text-xl font-bold">No matching opportunities yet</h3><p className="mt-2 text-sm text-[#8C7A6A]">Try another search or check back soon.</p></div>
+              ) : filtered.slice(0, 6).map(job => (
+                <article key={job.id} className="surface-card p-5 sm:p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F0E4D1] font-serif text-lg font-bold text-[#81551E]">{job.company?.[0]?.toUpperCase() || 'J'}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2"><h3 className="font-serif text-lg font-bold">{job.title}</h3><span className="verified-pill"><CheckCircle2 size={12} /> Verified</span></div>
+                      <p className="mt-1 text-sm text-[#806F5C]">{job.company}</p>
+                      <div className="mt-3 flex flex-wrap gap-3 text-xs text-[#91816E]">
+                        {job.location && <span><MapPin size={13} className="mr-1 inline" />{job.location}</span>}
+                        {job.job_type && <span><BriefcaseBusiness size={13} className="mr-1 inline" />{job.job_type}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-4 line-clamp-2 text-sm leading-6 text-[#857765]">{job.description}</p>
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEE5D9] pt-4">
+                    <span className="text-sm font-semibold text-[#72501F]">{job.salary_range || 'Salary not disclosed'}</span>
+                    <button onClick={() => onAuth('login')} className="btn-outline">View opportunity <ArrowRight size={14} /></button>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <div className="mt-8 text-center"><button onClick={() => onAuth('register')} className="btn-primary">Create an account to apply <ArrowRight size={15} /></button></div>
+          </div>
+        </section>
+
+        <section id="employers" className="page-shell py-16">
+          <div className="relative overflow-hidden rounded-[28px] bg-[#4A3826] px-7 py-12 text-white sm:px-12 sm:py-14">
+            <div className="absolute -right-20 -top-32 h-80 w-80 rounded-full border border-white/10" />
+            <div className="relative max-w-2xl">
+              <p className="eyebrow !text-[#E7C58C]">For employers</p>
+              <h2 className="mt-3 font-serif text-3xl font-bold leading-tight sm:text-4xl">Meet the people who will move your business forward.</h2>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-white/70">Build your company presence, publish opportunities and manage applications in one place.</p>
+              <button onClick={() => onAuth('register', 'employer')} className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#D9AA61] px-5 py-3 text-sm font-bold text-[#382819] hover:bg-[#E8C78F]">Find your next hire <ArrowRight size={16} /></button>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className="border-t border-[#E9DFD1] bg-[#F7F0E6]">
+        <div className="page-shell flex flex-col justify-between gap-5 py-8 sm:flex-row sm:items-center"><div><Brand /><p className="mt-2 text-xs text-[#978875]">Connecting talent with opportunity across Kenya.</p></div><p className="text-xs text-[#978875]">© 2026 JobLink. All rights reserved.</p></div>
+      </footer>
+    </div>
+  )
+}
+
+function JobSeekerWorkspace({ user, onLogout }) {
   const [active, setActive] = useState('Overview')
-  const [search, setSearch] = useState('')
-  const [locationSearch, setLocationSearch] = useState('')
-  const [selectedType, setSelectedType] = useState('All')
   const [jobs, setJobs] = useState([])
   const [applications, setApplications] = useState([])
   const [saved, setSaved] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [actionMessage, setActionMessage] = useState('')
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [applying, setApplying] = useState(null)
+  const [notifications, setNotifications] = useState([])
+  const [search, setSearch] = useState('')
+  const [location, setLocation] = useState('')
+  const [type, setType] = useState('All')
   const [selectedJob, setSelectedJob] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [applying, setApplying] = useState(null)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [mobileOpen, setMobileOpen] = useState(false)
 
-  const loadDashboard = useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError('')
-
     try {
-      const jobsData = await apiRequest('/jobs/')
-      setJobs(jobsData)
-
-      if (user?.role === 'job_seeker') {
-        const applicationData = await apiRequest('/applications/mine')
-        setApplications(applicationData)
-
-        const savedData = await apiRequest('/saved-jobs/')
-        setSaved(savedData)
-      }
+      const [jobData, applicationData, savedData, notificationData] = await Promise.all([
+        apiRequest('/jobs/'),
+        apiRequest('/applications/mine'),
+        apiRequest('/saved-jobs/'),
+        apiRequest('/notifications/'),
+      ])
+      setJobs(jobData)
+      setApplications(applicationData)
+      setSaved(savedData)
+      setNotifications(notificationData)
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
-  }, [user])
-
-  useEffect(() => {
-    if (!localStorage.getItem('joblink_token')) return
-
-    let cancelled = false
-
-    apiRequest('/auth/me')
-      .then((currentUser) => {
-        if (cancelled) return
-        localStorage.setItem('joblink_user', JSON.stringify(currentUser))
-        setUser(currentUser)
-      })
-      .catch(() => {
-        localStorage.removeItem('joblink_token')
-        localStorage.removeItem('joblink_user')
-      })
-
-    return () => {
-      cancelled = true
-    }
   }, [])
 
   useEffect(() => {
-    if (!user) return
-    const request = Promise.resolve().then(() => loadDashboard())
-    return () => {
-      request.catch(() => {})
-    }
-  }, [user, loadDashboard])
+    let active = true
+    Promise.resolve().then(() => {
+      if (active) load()
+    })
+    return () => { active = false }
+  }, [load])
+
+  const filteredJobs = useMemo(() => jobs.filter(job => {
+    const q = search.toLowerCase()
+    const place = location.toLowerCase()
+    const matchesText = !q || `${job.title} ${job.company} ${job.description} ${(job.skills || []).join(' ')}`.toLowerCase().includes(q)
+    const matchesLocation = !place || (job.location || '').toLowerCase().includes(place)
+    const matchesType = type === 'All' || (job.job_type || '').toLowerCase().includes(type.toLowerCase())
+    return matchesText && matchesLocation && matchesType
+  }), [jobs, search, location, type])
+
+  const visibleJobs = active === 'Saved jobs' ? filteredJobs.filter(job => saved.includes(job.id)) : filteredJobs
+  const appliedIds = new Set(applications.map(item => item.job_id))
+
+  async function toggleSaved(id) {
+    try {
+      if (saved.includes(id)) {
+        await apiRequest(`/saved-jobs/${id}`, { method: 'DELETE' })
+        setSaved(current => current.filter(item => item !== id))
+        setNotice('Removed from your saved jobs.')
+      } else {
+        await apiRequest(`/saved-jobs/${id}`, { method: 'POST' })
+        setSaved(current => [...current, id])
+        setNotice('Opportunity saved to your shortlist.')
+      }
+    } catch (err) { setError(err.message) }
+  }
+
+  async function apply(id) {
+    setApplying(id)
+    setError('')
+    try {
+      await apiRequest('/applications/', { method: 'POST', body: JSON.stringify({ job_id: id }) })
+      setNotice('Your application has been submitted.')
+      await load()
+    } catch (err) { setError(err.message) } finally { setApplying(null) }
+  }
+
+  async function markRead(id) {
+    try {
+      await apiRequest(`/notifications/${id}/read`, { method: 'PATCH' })
+      setNotifications(current => current.map(item => item.id === id ? { ...item, is_read: true } : item))
+    } catch (err) { setError(err.message) }
+  }
+
+  const nav = [
+    ['Overview', Compass], ['Find jobs', Search], ['Applications', FileText],
+    ['Saved jobs', Bookmark], ['Notifications', Bell],
+  ]
+
+  return (
+    <div className="workspace">
+      {mobileOpen && <button aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-40 bg-[#21180F]/40 lg:hidden" />}
+      <aside className={`workspace-sidebar ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="px-6 pb-8 pt-7"><Brand /><p className="mt-2 pl-1 text-[10px] font-semibold uppercase tracking-[.18em] text-[#A18F78]">Career workspace</p></div>
+        <p className="sidebar-label">Workspace</p>
+        <nav className="space-y-1 px-3">
+          {nav.map(([label, Icon]) => <button key={label} onClick={() => { setActive(label); setMobileOpen(false); setNotice('') }} className={`sidebar-link ${active === label ? 'sidebar-link-active' : ''}`}><Icon size={17} />{label}{label === 'Notifications' && notifications.some(item => !item.is_read) && <span className="ml-auto h-2 w-2 rounded-full bg-[#B7863E]" />}</button>)}
+        </nav>
+        <div className="mx-5 mt-9 rounded-2xl bg-[#F1E6D6] p-4">
+          <Sparkles size={18} className="text-[#956A2E]" />
+          <p className="mt-3 font-serif text-base font-bold">A new opportunity awaits.</p>
+          <p className="mt-1 text-xs leading-5 text-[#8D7A63]">Explore roles from employers across Kenya.</p>
+          <button onClick={() => setActive('Find jobs')} className="mt-3 text-xs font-bold text-[#81551E]">Explore jobs <ArrowRight size={13} className="ml-1 inline" /></button>
+        </div>
+        <div className="mt-auto border-t border-[#EDE4D8] p-4">
+          <div className="flex items-center gap-3 rounded-xl bg-[#F7F1E8] p-3"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#DCC49E] font-serif font-bold text-[#60451F]">{user.first_name?.[0]}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{user.first_name} {user.last_name}</p><p className="text-xs text-[#988875]">Job seeker</p></div><button onClick={onLogout} aria-label="Sign out" className="text-[#8F806D] hover:text-[#81551E]"><LogOut size={17} /></button></div>
+        </div>
+      </aside>
+
+      <main className="workspace-main">
+        <header className="workspace-topbar">
+          <div className="flex items-center gap-3"><button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-[#75634F] lg:hidden"><Menu size={20} /></button><div><p className="text-[11px] text-[#9B8A76]">{new Date().toLocaleDateString('en-KE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p><p className="mt-0.5 text-sm font-semibold">Welcome back, {user.first_name}</p></div></div>
+          <button onClick={() => setActive('Notifications')} className="relative rounded-xl border border-[#E9DFD2] bg-white p-2.5 text-[#806C53]"><Bell size={17} />{notifications.some(item => !item.is_read) && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#B7863E]" />}</button>
+        </header>
+        <div className="workspace-content">
+          {error && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+          {notice && <div role="status" className="mb-5 rounded-xl border border-[#E6D4B7] bg-[#F8F0E3] p-3 text-sm text-[#775523]">{notice}</div>}
+
+          {active === 'Overview' && <>
+            <section className="workspace-hero">
+              <div className="relative z-10 max-w-2xl"><p className="eyebrow !text-[#E8C991]">Your career journey</p><h1 className="mt-4 font-serif text-3xl font-bold leading-tight sm:text-4xl">Make room for your <span className="italic text-[#E7C58C]">next chapter.</span></h1><p className="mt-3 max-w-lg text-sm leading-7 text-white/70">Discover meaningful work, follow your applications and keep promising opportunities close.</p><button onClick={() => setActive('Find jobs')} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#D9AA61] px-5 py-3 text-sm font-bold text-[#382819]">Explore opportunities <ArrowRight size={15} /></button></div>
+              <div className="absolute -right-10 -top-20 h-72 w-72 rounded-full border border-white/10" />
+            </section>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                ['Applications', applications.length, FileText, 'Your active journey'],
+                ['Available roles', jobs.length, BriefcaseBusiness, 'Verified opportunities'],
+                ['Saved roles', saved.length, Bookmark, 'Your shortlist'],
+              ].map(([label, value, Icon, detail]) => <article key={label} className="metric-card"><div className="flex items-center justify-between"><span className="text-sm text-[#887865]">{label}</span><span className="metric-icon"><Icon size={17} /></span></div><p className="mt-5 font-serif text-3xl font-bold">{value}</p><p className="mt-1 text-xs text-[#A0917F]">{detail}</p></article>)}
+            </div>
+            <section><div className="section-heading"><div><p className="eyebrow">Explore by interest</p><h2 className="section-title">Where would you like to grow?</h2></div></div><div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">{categories.map(item => <button key={item.name} onClick={() => { setSearch(item.search); setActive('Find jobs') }} className="category-card !min-h-[130px] text-left"><span className="font-serif text-lg font-bold">{item.name}</span><span className="mt-2 text-xs text-[#958675]">{item.count}</span><ArrowUpRight className="absolute right-4 top-4 text-[#A9854F]" size={17} /></button>)}</div></section>
+            <JobList jobs={jobs.slice(0, 3)} saved={saved} appliedIds={appliedIds} onSave={toggleSaved} onApply={apply} onSelect={setSelectedJob} applying={applying} />
+          </>}
+
+          {active === 'Applications' && <section><p className="eyebrow">Your career journey</p><h1 className="section-title mt-2">Application tracker</h1><p className="section-copy">Keep up with every opportunity you've pursued.</p><div className="mt-6 grid gap-3 sm:grid-cols-3">{[['All applications', applications.length], ['Under review', applications.filter(item => item.status === 'Under Review').length], ['Shortlisted', applications.filter(item => item.status === 'Shortlisted').length]].map(([label, value]) => <div className="metric-card" key={label}><p className="text-sm text-[#887865]">{label}</p><p className="mt-3 font-serif text-3xl font-bold">{value}</p></div>)}</div><div className="mt-6 space-y-3">{applications.length ? applications.map(item => <article key={item.id} className="surface-card flex flex-wrap items-center justify-between gap-4 p-5"><div><h3 className="font-serif text-lg font-bold">{item.job_title}</h3><p className="mt-1 text-sm text-[#887865]">{item.company}</p><p className="mt-2 text-xs text-[#A0917F]">Applied {new Date(item.applied_at).toLocaleDateString('en-KE')}</p></div><span className="status-pill">{item.status}</span></article>) : <EmptyState title="Your story starts with an application." detail="When you apply for a role, you can follow its progress here." action="Find jobs" onAction={() => setActive('Find jobs')} />}</div></section>}
+
+          {(active === 'Find jobs' || active === 'Saved jobs') && <>
+            <p className="eyebrow">{active === 'Saved jobs' ? 'Your shortlist' : 'Discover opportunities'}</p><h1 className="section-title mt-2">{active === 'Saved jobs' ? 'Saved opportunities' : 'Find your next role.'}</h1><p className="section-copy">Search opportunities from verified employers across Kenya.</p>
+            <div className="surface-card mt-6 p-4 sm:p-5"><div className="grid gap-3 md:grid-cols-[1.4fr_1fr]"><label className="search-field"><Search size={17} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Role, skill or company" /></label><label className="search-field"><MapPin size={17} /><input value={location} onChange={event => setLocation(event.target.value)} placeholder="Town, county or remote" /></label></div><div className="mt-4 flex flex-wrap gap-2">{jobTypes.map(item => <button key={item} onClick={() => setType(item)} className={`filter-chip ${type === item ? 'filter-chip-active' : ''}`}>{item}</button>)}</div></div>
+            <JobList jobs={visibleJobs} saved={saved} appliedIds={appliedIds} onSave={toggleSaved} onApply={apply} onSelect={setSelectedJob} applying={applying} loading={loading} />
+          </>}
+
+          {active === 'Notifications' && <section><p className="eyebrow">Stay informed</p><h1 className="section-title mt-2">Notifications</h1><p className="section-copy">Updates about your applications and activity.</p><div className="mt-6 space-y-3">{notifications.length ? notifications.map(item => <article key={item.id} className={`surface-card flex items-start gap-4 p-5 ${!item.is_read ? 'border-[#D8BD91]' : ''}`}><span className="metric-icon"><Bell size={17} /></span><div className="min-w-0 flex-1"><p className="text-sm leading-6">{item.message}</p><p className="mt-2 text-xs text-[#A0917F]">{new Date(item.created_at).toLocaleString('en-KE')}</p></div>{!item.is_read && <button onClick={() => markRead(item.id)} className="text-xs font-semibold text-[#81551E]">Mark read</button>}</article>) : <EmptyState title="You're all caught up." detail="New updates will appear here." />}</div></section>}
+          <footer className="mt-12 flex flex-wrap justify-between gap-3 border-t border-[#E9DFD2] py-5 text-[11px] text-[#A0917F]"><span>© 2026 JobLink</span><span>Connecting talent with opportunity across Kenya.</span></footer>
+        </div>
+      </main>
+
+      {selectedJob && <JobModal job={selectedJob} saved={saved.includes(selectedJob.id)} applied={appliedIds.has(selectedJob.id)} applying={applying === selectedJob.id} onClose={() => setSelectedJob(null)} onSave={() => toggleSaved(selectedJob.id)} onApply={() => apply(selectedJob.id)} />}
+    </div>
+  )
+}
+
+function JobList({ jobs, saved, appliedIds, onSave, onApply, onSelect, applying, loading }) {
+  return <section className="mt-8"><div className="section-heading"><div><p className="eyebrow">Verified listings</p><h2 className="section-title">Opportunities to explore.</h2></div><span className="text-xs text-[#9A8A76]">{jobs.length} roles</span></div><div className="mt-5 grid gap-4 lg:grid-cols-2">{loading ? <div className="surface-card p-8 text-sm text-[#8C7A64]">Loading opportunities…</div> : jobs.length ? jobs.map(job => <article key={job.id} className="surface-card p-5 transition hover:-translate-y-0.5 hover:shadow-lg sm:p-6"><div className="flex items-start gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F0E4D1] font-serif text-lg font-bold text-[#81551E]">{job.company?.[0]?.toUpperCase() || 'J'}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><button onClick={() => onSelect(job)} className="text-left font-serif text-lg font-bold hover:text-[#81551E]">{job.title}</button><span className="verified-pill"><CheckCircle2 size={12} /> Verified</span></div><p className="mt-1 text-sm text-[#806F5C]">{job.company}</p><div className="mt-3 flex flex-wrap gap-3 text-xs text-[#91816E]">{job.location && <span><MapPin size={13} className="mr-1 inline" />{job.location}</span>}{job.job_type && <span><BriefcaseBusiness size={13} className="mr-1 inline" />{job.job_type}</span>}</div></div><button aria-label="Save job" onClick={() => onSave(job.id)} className={`rounded-lg border p-2 ${saved.includes(job.id) ? 'border-[#C5A16B] bg-[#F6EBDD] text-[#81551E]' : 'border-[#E9DFD2] text-[#9A8A76]'}`}><Bookmark size={16} fill={saved.includes(job.id) ? 'currentColor' : 'none'} /></button></div><p className="mt-4 line-clamp-2 text-sm leading-6 text-[#857765]">{job.description}</p>{job.skills?.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{job.skills.slice(0, 4).map(skill => <span key={skill} className="skill-chip">{skill}</span>)}</div>}<div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEE5D9] pt-4"><span className="text-sm font-semibold text-[#72501F]">{job.salary_range || 'Salary not disclosed'}</span><div className="flex gap-2"><button onClick={() => onSelect(job)} className="btn-outline">Details</button><button disabled={appliedIds.has(job.id) || applying === job.id} onClick={() => onApply(job.id)} className="btn-primary !px-4 !py-2.5 disabled:opacity-50">{appliedIds.has(job.id) ? 'Applied' : applying === job.id ? 'Applying…' : 'Apply'}</button></div></div></article>) : <div className="surface-card p-10 text-center lg:col-span-2"><BriefcaseBusiness className="mx-auto text-[#B18A53]" size={28} /><h3 className="mt-3 font-serif text-xl font-bold">No opportunities to show</h3><p className="mt-2 text-sm text-[#8C7A64]">Try adjusting your filters or check back later.</p></div>}</div></section>
+}
+
+function JobModal({ job, saved, applied, applying, onClose, onSave, onApply }) {
+  return <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#241B12]/60 p-4 backdrop-blur-sm" onClick={onClose}><section role="dialog" aria-modal="true" onClick={event => event.stopPropagation()} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[25px] bg-[#FFFCF7] p-6 shadow-2xl sm:p-8"><div className="flex justify-between gap-4"><div><p className="eyebrow">Verified opportunity</p><h2 className="mt-2 font-serif text-2xl font-bold">{job.title}</h2><p className="mt-1 text-sm text-[#887865]">{job.company}</p></div><button onClick={onClose} className="h-fit rounded-lg border border-[#E9DFD2] p-2 text-[#887865]"><X size={18} /></button></div><div className="mt-6 grid gap-3 rounded-xl bg-[#F3EBDD] p-4 sm:grid-cols-3"><div><p className="eyebrow">Location</p><p className="mt-1 text-sm font-semibold">{job.location || 'Not specified'}</p></div><div><p className="eyebrow">Employment</p><p className="mt-1 text-sm font-semibold">{job.job_type || 'Not specified'}</p></div><div><p className="eyebrow">Salary</p><p className="mt-1 text-sm font-semibold">{job.salary_range || 'Not disclosed'}</p></div></div><h3 className="mt-7 font-serif text-lg font-bold">About this role</h3><p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#766957]">{job.description}</p>{job.skills?.length > 0 && <><h3 className="mt-6 font-serif text-lg font-bold">Skills and requirements</h3><div className="mt-3 flex flex-wrap gap-2">{job.skills.map(skill => <span className="skill-chip" key={skill}>{skill}</span>)}</div></>}<div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-[#E9DFD2] pt-5"><button onClick={onSave} className="btn-outline">{saved ? 'Remove saved job' : 'Save opportunity'}</button><button disabled={applied || applying} onClick={onApply} className="btn-primary disabled:opacity-50">{applied ? 'Already applied' : applying ? 'Submitting…' : 'Apply for this role'} <ArrowRight size={15} /></button></div></section></div>
+}
+
+function EmptyState({ title, detail, action, onAction }) {
+  return <div className="surface-card px-6 py-14 text-center"><Compass className="mx-auto text-[#B18A53]" size={28} /><h2 className="mt-3 font-serif text-xl font-bold">{title}</h2><p className="mt-2 text-sm text-[#8C7A64]">{detail}</p>{action && <button onClick={onAction} className="btn-primary mt-5">{action}</button>}</div>
+}
+
+export default function App() {
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('joblink_user')) } catch { return null }
+  })
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState('login')
+  const [jobs, setJobs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [location, setLocation] = useState('')
+
+  useEffect(() => {
+    let mounted = true
+    apiRequest('/jobs/').then(data => { if (mounted) setJobs(data) }).catch(() => {}).finally(() => { if (mounted) setLoading(false) })
+    return () => { mounted = false }
+  }, [])
+
+  function openAuth(mode = 'login', role) {
+    setAuthMode(mode)
+    setAuthOpen(true)
+    if (role) window.setTimeout(() => {
+      const select = document.querySelector('select[name="role"]')
+      if (select) select.value = role
+    }, 0)
+  }
 
   function logout() {
     localStorage.removeItem('joblink_token')
     localStorage.removeItem('joblink_user')
     setUser(null)
-    setJobs([])
-    setApplications([])
-    setSaved([])
   }
 
-  async function toggleSavedJob(jobId) {
-    setActionMessage('')
+  if (user?.role === 'employer') return <EmployerWorkspace user={user} onLogout={logout} />
+  if (user?.role === 'admin') return <AdminWorkspace user={user} onLogout={logout} />
+  if (user?.role === 'job_seeker') return <JobSeekerWorkspace user={user} onLogout={logout} />
 
-    try {
-      if (saved.includes(jobId)) {
-        await apiRequest(`/saved-jobs/${jobId}`, { method: 'DELETE' })
-        setSaved((current) => current.filter((id) => id !== jobId))
-        setActionMessage('Job removed from your saved opportunities.')
-      } else {
-        await apiRequest(`/saved-jobs/${jobId}`, { method: 'POST' })
-        setSaved((current) => current.includes(jobId) ? current : [...current, jobId])
-        setActionMessage('Job saved successfully.')
-      }
-    } catch (err) {
-      setActionMessage(err.message)
-    }
-  }
-
-  async function applyToJob(jobId) {
-    setApplying(jobId)
-    setActionMessage('')
-    try {
-      await apiRequest('/applications/', {
-        method: 'POST',
-        body: JSON.stringify({ job_id: jobId }),
-      })
-      setActionMessage('Your application has been submitted.')
-      await loadDashboard()
-    } catch (err) {
-      setActionMessage(err.message)
-    } finally {
-      setApplying(null)
-    }
-  }
-
-  if (!user) {
-    return <AuthScreen onAuthenticated={setUser} />
-  }
-
-  if (user.role === 'employer') {
-    return <EmployerWorkspace user={user} onLogout={logout} />
-  }
-
-  if (user.role === 'admin') {
-    return <AdminWorkspace user={user} onLogout={logout} />
-  }
-
-  const filteredJobs = jobs.filter((job) => {
-    const searchable = `${job.title} ${job.company} ${job.location || ''} ${(job.skills || []).join(' ')}`.toLowerCase()
-    return searchable.includes(search.toLowerCase())
-      && (job.location || '').toLowerCase().includes(locationSearch.toLowerCase())
-      && (selectedType === 'All' || job.job_type === selectedType)
-  })
-
-  const jobTypes = [...new Set(jobs.map((job) => job.job_type).filter(Boolean))]
-
-  const appliedJobIds = new Set(applications.map((application) => application.job_id))
-  const visibleJobs = active === 'Saved jobs'
-    ? filteredJobs.filter((job) => saved.includes(job.id))
-    : filteredJobs
-
-
-  const sidebar = (
-    <aside className="flex h-full flex-col bg-white px-4 py-6">
-      <div className="mb-10 flex items-center gap-3 px-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#BC2132] text-lg font-bold text-white">J</div>
-        <div>
-          <div className="text-xl font-bold tracking-tight text-gray-900">joblink<span className="text-[#BC2132]">.</span></div>
-          <div className="text-[10px] font-semibold uppercase tracking-[1.8px] text-gray-400">Career workspace</div>
-        </div>
-        <button onClick={() => setMobileOpen(false)} className="ml-auto rounded-lg p-2 text-gray-400 hover:bg-gray-100 lg:hidden" aria-label="Close menu">
-          <span className="text-lg">×</span>
-        </button>
-      </div>
-
-      <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[1.7px] text-gray-400">Workspace</p>
-      <nav className="space-y-1">
-        {navigation.map(({ label, icon: Icon }) => (
-          <button
-            key={label}
-            onClick={() => { setActive(label); setMobileOpen(false); setError(''); setActionMessage('') }}
-            className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
-              active === label
-                ? 'bg-[#FFF0F1] text-[#BC2132]'
-                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-            }`}
-          >
-            <Icon size={18} strokeWidth={1.8} />
-            {label}
-            {label === 'Applications' && applications.length > 0 && (
-              <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold ${active === label ? 'bg-white text-[#BC2132]' : 'bg-gray-100 text-gray-500'}`}>
-                {applications.length}
-              </span>
-            )}
-            {active === label && <ArrowUpRight className="ml-auto" size={15} />}
-          </button>
-        ))}
-      </nav>
-
-      <div className="mt-9 rounded-2xl bg-[#5C1019] p-4 text-white">
-        <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
-          <Sparkles size={17} />
-        </div>
-        <p className="text-sm font-semibold">Your next opportunity awaits.</p>
-        <p className="mt-1 text-xs leading-5 text-white/65">Explore verified opportunities from employers across Kenya.</p>
-        <button onClick={() => { setActive('Find jobs'); setMobileOpen(false) }} className="mt-3 text-xs font-bold text-white hover:text-pink-200">
-          Explore jobs <ArrowUpRight className="ml-1 inline" size={13} />
-        </button>
-      </div>
-
-      <div className="mt-auto border-t border-gray-100 pt-5">
-        <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F9DDE0] text-sm font-bold text-[#BC2132]">
-            {user.first_name?.[0]?.toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-gray-800">{user.first_name} {user.last_name}</p>
-            <p className="text-xs capitalize text-gray-400">{user.role?.replace('_', ' ')}</p>
-          </div>
-          <button onClick={logout} aria-label="Sign out" className="rounded-lg p-2 text-gray-400 transition hover:bg-white hover:text-[#BC2132]">
-            <LogOut size={17} />
-          </button>
-        </div>
-      </div>
-    </aside>
-  )
-
-  const pageTitles = {
-    Overview: ['Your career starts here', 'Discover opportunities that move you forward.'],
-    'Find jobs': ['Find your next opportunity', 'Explore verified jobs from employers across Kenya.'],
-    Applications: ['Your applications', 'Keep track of the opportunities you have applied for.'],
-    'Saved jobs': ['Your saved opportunities', 'Keep interesting roles close while you decide your next move.'],
-  }
-
-  return (
-    <div className="min-h-screen bg-[#F7F8FA] text-gray-900">
-      <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <div className="hidden w-[250px] shrink-0 border-r border-gray-200/70 lg:block">
-          {sidebar}
-        </div>
-
-        {mobileOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <button aria-label="Close menu" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-gray-950/40 backdrop-blur-[2px]" />
-            <div className="relative h-full w-[285px] shadow-2xl">{sidebar}</div>
-          </div>
-        )}
-
-        <main className="min-w-0 flex-1">
-          <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-gray-200/70 bg-white/90 px-5 backdrop-blur-xl md:px-9">
-            <div className="flex items-center gap-3">
-              <button className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open menu">
-                <Menu size={21} />
-              </button>
-              <div>
-                <p className="text-xs text-gray-400">
-                  {new Date().toLocaleDateString('en-KE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                </p>
-                <p className="mt-0.5 text-sm font-semibold text-gray-800">Welcome back, {user.first_name}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button onClick={loadDashboard} aria-label="Refresh dashboard" className="rounded-xl border border-gray-200 p-2.5 text-gray-500 transition hover:bg-gray-50 hover:text-[#BC2132]">
-                <Bell size={18} />
-              </button>
-              <div className="hidden h-9 w-9 items-center justify-center rounded-full bg-[#F9DDE0] text-sm font-bold text-[#BC2132] sm:flex">
-                {user.first_name?.[0]?.toUpperCase()}
-              </div>
-            </div>
-          </header>
-
-          <div className="mx-auto max-w-[1250px] space-y-7 p-5 md:p-9">
-            {error && (
-              <div role="alert" className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">{error}</div>
-            )}
-            {actionMessage && (
-              <div role="status" className="rounded-xl border border-[#F6D9DD] bg-[#FFF5F6] p-4 text-sm text-[#9D1C2B]">{actionMessage}</div>
-            )}
-
-            {active === 'Overview' && (
-              <>
-                <section className="relative overflow-hidden rounded-[28px] bg-[#5C1019] px-6 py-9 text-white md:px-10 md:py-12">
-                  <div className="pointer-events-none absolute -right-24 -top-28 h-96 w-96 rounded-full border border-white/10" />
-                  <div className="pointer-events-none absolute -bottom-44 right-24 h-80 w-80 rounded-full bg-[#BC2132]/40 blur-3xl" />
-                  <div className="relative z-10 max-w-3xl">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[1.5px] text-white/80">
-                      <Sparkles size={13} /> Kenya's career marketplace
-                    </span>
-                    <h1 className="mt-5 max-w-2xl text-3xl font-bold leading-[1.12] tracking-tight text-white md:text-[46px]">
-                      Find work that moves your <span className="text-[#F2B8C0]">future forward.</span>
-                    </h1>
-                    <p className="mt-4 max-w-xl text-sm leading-7 text-white/70 md:text-base">
-                      Discover verified opportunities, explore growing companies and find a role that matches your ambition.
-                    </p>
-
-                    <div className="mt-8 grid gap-2 rounded-2xl bg-white p-2.5 shadow-2xl shadow-black/20 md:grid-cols-[1.3fr_1fr_auto]">
-                      <label className="flex min-w-0 items-center gap-3 rounded-xl px-3 py-3 text-gray-500 focus-within:bg-gray-50">
-                        <Search size={19} className="shrink-0 text-[#BC2132]" />
-                        <input
-                          value={search}
-                          onChange={(event) => setSearch(event.target.value)}
-                          onKeyDown={(event) => event.key === 'Enter' && setActive('Find jobs')}
-                          placeholder="Job title, skill or company"
-                          className="w-full min-w-0 bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
-                        />
-                      </label>
-                      <label className="flex min-w-0 items-center gap-3 rounded-xl border-t border-gray-100 px-3 py-3 text-gray-500 focus-within:bg-gray-50 md:border-l md:border-t-0">
-                        <MapPin size={19} className="shrink-0 text-[#BC2132]" />
-                        <input
-                          value={locationSearch}
-                          onChange={(event) => setLocationSearch(event.target.value)}
-                          onKeyDown={(event) => event.key === 'Enter' && setActive('Find jobs')}
-                          placeholder="County or remote"
-                          className="w-full min-w-0 bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
-                        />
-                      </label>
-                      <button
-                        onClick={() => setActive('Find jobs')}
-                        className="flex items-center justify-center gap-2 rounded-xl bg-[#BC2132] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#BC2132]/20 hover:bg-[#9F1C2A]"
-                      >
-                        Search jobs <ArrowUpRight size={16} />
-                      </button>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px] text-white/65">
-                      <span className="mr-1 font-semibold text-white/80">Popular searches</span>
-                      {['Software Developer', 'Internship', 'Remote', 'Marketing'].map((term) => (
-                        <button
-                          key={term}
-                          onClick={() => { setSearch(term); setActive('Find jobs') }}
-                          className="rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 transition hover:border-white/40 hover:bg-white/15 hover:text-white"
-                        >
-                          {term}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="pointer-events-none absolute bottom-3 right-8 hidden select-none text-[150px] font-black leading-none text-white/[0.045] xl:block">J.</div>
-                </section>
-                <section className="grid gap-4 sm:grid-cols-3">
-                  {[
-                    { label: 'Applications', value: applications.length, icon: FileText, detail: 'Track your progress' },
-                    { label: 'Open opportunities', value: jobs.length, icon: BriefcaseBusiness, detail: 'Verified jobs across Kenya' },
-                    { label: 'Saved jobs', value: saved.length, icon: Bookmark, detail: 'Your personal shortlist' },
-                  ].map(({ label, value, icon: Icon, detail }) => (
-                    <article key={label} className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_2px_10px_rgba(20,20,20,0.025)]">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-500">{label}</span>
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFF0F1] text-[#BC2132]"><Icon size={17} /></span>
-                      </div>
-                      <p className="mt-4 text-3xl font-semibold tracking-tight">{value}</p>
-                      <p className="mt-1 text-xs text-gray-400">{detail}</p>
-                    </article>
-                  ))}
-                </section>
-
-                <section className="space-y-4">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[1.8px] text-[#BC2132]">Explore by field</p>
-                    <h2 className="mt-1 text-xl font-semibold tracking-tight">Discover opportunities by interest</h2>
-                    <p className="mt-1 text-sm text-gray-500">Choose an area to find relevant roles.</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                    {[
-                      { name: 'Technology', term: 'software' },
-                      { name: 'Finance', term: 'finance' },
-                      { name: 'Marketing', term: 'marketing' },
-                      { name: 'Sales', term: 'sales' },
-                      { name: 'Administration', term: 'admin' },
-                      { name: 'Customer service', term: 'customer' },
-                    ].map((category) => (
-                      <button key={category.name} onClick={() => { setSearch(category.term); setSelectedType('All'); setActive('Find jobs') }}
-                        className="group rounded-2xl border border-gray-200/80 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-[#BC2132]/40 hover:shadow-md">
-                        <span className="block text-sm font-semibold text-gray-800 transition group-hover:text-[#BC2132]">{category.name}</span>
-                        <span className="mt-2 block text-[11px] text-gray-400">Explore roles →</span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              </>
-            )}
-
-            {active === 'Applications' ? (
-              <section className="space-y-5">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[1.7px] text-[#BC2132]">Your career journey</p>
-                  <h1 className="mt-2 text-2xl font-semibold tracking-tight">{pageTitles[active][0]}</h1>
-                  <p className="mt-1 text-sm text-gray-500">{pageTitles[active][1]}</p>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <article className="rounded-2xl border border-gray-200 bg-white p-5">
-                    <p className="text-xs text-gray-500">Total applications</p>
-                    <p className="mt-3 text-3xl font-semibold">{applications.length}</p>
-                  </article>
-                  <article className="rounded-2xl border border-gray-200 bg-white p-5">
-                    <p className="text-xs text-gray-500">Under review</p>
-                    <p className="mt-3 text-3xl font-semibold">{applications.filter((item) => item.status === 'Under Review').length}</p>
-                  </article>
-                  <article className="rounded-2xl border border-gray-200 bg-white p-5">
-                    <p className="text-xs text-gray-500">Shortlisted</p>
-                    <p className="mt-3 text-3xl font-semibold">{applications.filter((item) => item.status === 'Shortlisted').length}</p>
-                  </article>
-                </div>
-
-                {applications.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center">
-                    <FileText className="mx-auto mb-3 text-gray-300" size={30} />
-                    <h2 className="font-semibold text-gray-800">No applications yet</h2>
-                    <p className="mt-1 text-sm text-gray-400">When you apply for a job, it will appear here.</p>
-                    <button onClick={() => setActive('Find jobs')} className="mt-5 rounded-xl bg-[#BC2132] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#9F1C2A]">Find jobs</button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {applications.map((application) => (
-                      <article key={application.id} className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_2px_10px_rgba(20,20,20,0.025)] md:p-6">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                          <div className="flex items-start gap-3">
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FFF0F1] text-[#BC2132]"><BriefcaseBusiness size={19} /></div>
-                            <div>
-                              <h2 className="font-semibold text-gray-900">{application.job_title || 'Job application'}</h2>
-                              <p className="mt-1 text-sm text-gray-500">{application.company}</p>
-                              <p className="mt-2 text-xs text-gray-400">Applied {new Date(application.applied_at).toLocaleDateString('en-KE')}</p>
-                            </div>
-                          </div>
-                          <span className="rounded-full bg-[#FFF0F1] px-3 py-1.5 text-xs font-semibold text-[#BC2132]">{application.status}</span>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </section>
-            ) : (
-              <>
-                {active !== 'Overview' && (
-                  <section>
-                    <p className="text-xs font-semibold uppercase tracking-[1.7px] text-[#BC2132]">
-                      {active === 'Saved jobs' ? 'Your shortlist' : 'Job search'}
-                    </p>
-                    <h1 className="mt-2 text-2xl font-semibold tracking-tight">{pageTitles[active][0]}</h1>
-                    <p className="mt-1 text-sm text-gray-500">{pageTitles[active][1]}</p>
-                  </section>
-                )}
-
-                <section className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-[0_2px_10px_rgba(20,20,20,0.025)] md:p-7">
-                  <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[1.8px] text-[#BC2132]">JobLink opportunities</p>
-                      <h2 className="mt-1 text-lg font-semibold tracking-tight">
-                        {active === 'Saved jobs' ? 'Your saved opportunities' : 'Search jobs across Kenya'}
-                      </h2>
-                      <p className="mt-1 text-sm text-gray-500">Search by role, company, skill or location.</p>
-                    </div>
-                    <button onClick={loadDashboard} className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-600 transition hover:border-[#DDA0A8] hover:text-[#BC2132]">
-                      <SlidersHorizontal size={14} /> Refresh
-                    </button>
-                  </div>
-
-                  <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr]">
-                    <label className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3.5 transition focus-within:border-[#BC2132] focus-within:ring-4 focus-within:ring-[#BC2132]/5">
-                      <Search size={18} className="shrink-0 text-[#BC2132]" />
-                      <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Job title, company or skill" className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400" />
-                    </label>
-                    <label className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3.5 transition focus-within:border-[#BC2132] focus-within:ring-4 focus-within:ring-[#BC2132]/5">
-                      <MapPin size={18} className="shrink-0 text-[#BC2132]" />
-                      <input value={locationSearch} onChange={(event) => setLocationSearch(event.target.value)} placeholder="Town, county or remote" className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400" />
-                    </label>
-                  </div>
-
-                  {jobTypes.length > 0 && (
-                    <div className="mt-5 flex flex-wrap items-center gap-2">
-                      <span className="mr-1 text-xs font-semibold text-gray-500">Job type</span>
-                      {['All', ...jobTypes].map((type) => (
-                        <button key={type} onClick={() => setSelectedType(type)}
-                          className={`rounded-full border px-3.5 py-2 text-xs font-medium transition ${
-                            selectedType === type
-                              ? 'border-[#BC2132] bg-[#FFF0F1] text-[#BC2132]'
-                              : 'border-gray-200 text-gray-500 hover:border-[#DDA0A8] hover:text-[#BC2132]'
-                          }`}>{type}</button>
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section className="space-y-4">
-                  <div className="flex flex-wrap items-end justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[1.8px] text-[#BC2132]">
-                        {active === 'Saved jobs' ? 'Your shortlist' : 'Verified listings'}
-                      </p>
-                      <h2 className="mt-1 text-xl font-semibold tracking-tight">
-                        {active === 'Saved jobs' ? 'Saved opportunities' : active === 'Overview' ? 'Opportunities to explore' : 'Available opportunities'}
-                      </h2>
-                      <p className="mt-1 text-sm text-gray-500">Explore roles posted by verified employers.</p>
-                    </div>
-                    <span className="text-xs text-gray-400">{visibleJobs.length} opportunities</span>
-                  </div>
-
-                  {loading ? (
-                    <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">Loading opportunities...</div>
-                  ) : visibleJobs.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center">
-                      <BriefcaseBusiness className="mx-auto mb-3 text-gray-300" size={30} />
-                      <h3 className="font-semibold text-gray-800">
-                        {active === 'Saved jobs' ? 'No saved jobs yet' : 'No matching opportunities found'}
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-400">
-                        {active === 'Saved jobs' ? 'Save interesting jobs to find them here.' : 'Try adjusting your search or filters.'}
-                      </p>
-                      {active === 'Saved jobs' && (
-                        <button onClick={() => setActive('Find jobs')} className="mt-5 rounded-xl bg-[#BC2132] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#9F1C2A]">Explore jobs</button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {visibleJobs.map((job) => (
-                        <article key={job.id}
-                          className="group cursor-pointer rounded-2xl border border-gray-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#DDA0A8] hover:shadow-lg md:p-6"
-                          onClick={() => setSelectedJob(job)}>
-                          <div className="flex items-start gap-4">
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#FCEDEF] text-xl font-bold text-[#BC2132]">
-                              {job.company?.[0]?.toUpperCase() || 'J'}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="text-base font-bold tracking-tight text-gray-900 group-hover:text-[#BC2132]">{job.title}</h3>
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
-                                  <CircleCheck size={11} /> Verified
-                                </span>
-                              </div>
-                              <p className="mt-1 text-sm font-medium text-gray-600">{job.company}</p>
-                              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-500">
-                                {job.location && <span className="flex items-center gap-1.5"><MapPin size={13} className="text-[#BC2132]" />{job.location}</span>}
-                                {job.job_type && <span className="flex items-center gap-1.5"><BriefcaseBusiness size={13} />{job.job_type}</span>}
-                                {job.created_at && <span className="flex items-center gap-1.5"><Clock3 size={13} />{new Date(job.created_at).toLocaleDateString('en-KE')}</span>}
-                              </div>
-                              {job.description && <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-500">{job.description}</p>}
-                              {job.skills?.length > 0 && (
-                                <div className="mt-4 flex flex-wrap gap-2">
-                                  {job.skills.slice(0, 5).map((skill) => (
-                                    <span key={skill} className="rounded-lg bg-[#F5F6F8] px-2.5 py-1.5 text-[11px] font-medium text-gray-600">{skill}</span>
-                                  ))}
-                                  {job.skills.length > 5 && <span className="px-1 py-1.5 text-[11px] text-gray-400">+{job.skills.length - 5} more</span>}
-                                </div>
-                              )}
-                            </div>
-                            <button aria-label={saved.includes(job.id) ? 'Remove saved job' : 'Save job'}
-                              onClick={(event) => { event.stopPropagation(); toggleSavedJob(job.id) }}
-                              className={`shrink-0 rounded-xl border p-2.5 transition ${
-                                saved.includes(job.id)
-                                  ? 'border-[#BC2132] bg-[#FFF0F1] text-[#BC2132]'
-                                  : 'border-gray-200 text-gray-400 hover:border-[#BC2132] hover:text-[#BC2132]'
-                              }`}>
-                              <Bookmark size={17} fill={saved.includes(job.id) ? 'currentColor' : 'none'} />
-                            </button>
-                          </div>
-                          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Salary range</p>
-                              <p className="mt-1 text-sm font-bold text-[#5C1019]">{job.salary_range || 'Not disclosed'}</p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <button onClick={(event) => { event.stopPropagation(); setSelectedJob(job) }}
-                                className="text-xs font-semibold text-gray-500 hover:text-[#BC2132]">View details</button>
-                              <button disabled={appliedJobIds.has(job.id) || applying === job.id}
-                                onClick={(event) => { event.stopPropagation(); applyToJob(job.id) }}
-                                className="rounded-xl bg-[#BC2132] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#9F1C2A] disabled:cursor-not-allowed disabled:bg-gray-300">
-                                {appliedJobIds.has(job.id) ? 'Applied' : applying === job.id ? 'Applying...' : 'Apply now'}
-                              </button>
-                            </div>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              </>
-            )}
-
-            {selectedJob && (
-              <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#17151A]/55 p-4 backdrop-blur-sm"
-                onClick={() => setSelectedJob(null)}>
-                <section role="dialog" aria-modal="true" aria-labelledby="job-detail-title"
-                  onClick={(event) => event.stopPropagation()}
-                  className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#FCEDEF] text-xl font-bold text-[#BC2132]">
-                        {selectedJob.company?.[0]?.toUpperCase() || 'J'}
-                      </div>
-                      <div>
-                        <h2 id="job-detail-title" className="text-xl font-bold tracking-tight">{selectedJob.title}</h2>
-                        <p className="mt-1 text-sm text-gray-500">{selectedJob.company}</p>
-                        <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
-                          <CircleCheck size={11} /> Verified employer listing
-                        </span>
-                      </div>
-                    </div>
-                    <button onClick={() => setSelectedJob(null)} aria-label="Close job details"
-                      className="rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50">✕</button>
-                  </div>
-                  <div className="mt-6 grid gap-3 rounded-2xl bg-[#F7F7F9] p-4 sm:grid-cols-3">
-                    <div><p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Location</p><p className="mt-1 text-sm font-semibold">{selectedJob.location || 'Not specified'}</p></div>
-                    <div><p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Employment</p><p className="mt-1 text-sm font-semibold">{selectedJob.job_type || 'Not specified'}</p></div>
-                    <div><p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Salary</p><p className="mt-1 text-sm font-semibold">{selectedJob.salary_range || 'Not disclosed'}</p></div>
-                  </div>
-                  <div className="mt-7">
-                    <h3 className="font-bold">About this role</h3>
-                    <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-600">{selectedJob.description}</p>
-                  </div>
-                  {selectedJob.skills?.length > 0 && (
-                    <div className="mt-6">
-                      <h3 className="font-bold">Skills and requirements</h3>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {selectedJob.skills.map((skill) => <span key={skill} className="rounded-lg bg-[#F5F6F8] px-3 py-2 text-xs font-medium text-gray-600">{skill}</span>)}
-                      </div>
-                    </div>
-                  )}
-                  <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-gray-100 pt-5">
-                    <button onClick={() => toggleSavedJob(selectedJob.id)}
-                      className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 hover:border-[#BC2132] hover:text-[#BC2132]">
-                      {saved.includes(selectedJob.id) ? 'Remove saved job' : 'Save this job'}
-                    </button>
-                    <button disabled={appliedJobIds.has(selectedJob.id) || applying === selectedJob.id}
-                      onClick={() => applyToJob(selectedJob.id)}
-                      className="rounded-xl bg-[#BC2132] px-6 py-3 text-sm font-bold text-white hover:bg-[#9F1C2A] disabled:bg-gray-300">
-                      {appliedJobIds.has(selectedJob.id) ? 'Already applied' : applying === selectedJob.id ? 'Applying...' : 'Apply for this role'}
-                    </button>
-                  </div>
-                </section>
-              </div>
-            )}
-
-            <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-200/80 py-5 text-[11px] text-gray-400">
-              <span>© 2026 JobLink. Your next chapter starts here.</span>
-              <span>Built for opportunity in Kenya.</span>
-            </footer>
-          </div>
-        </main>
-      </div>
-    </div>
-  )
-
+  return <>
+    <PublicSite onAuth={openAuth} jobs={jobs} loading={loading} search={search} setSearch={setSearch} location={location} setLocation={setLocation} />
+    {authOpen && <AuthScreen onAuthenticated={setUser} onClose={() => setAuthOpen(false)} initialMode={authMode} />}
+  </>
 }
-
-export default App
