@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight, ArrowUpRight, Search, MapPin, BriefcaseBusiness,
   Bookmark, FileText, Bell, Menu, X, CheckCircle2,
-  LogOut, Eye, EyeOff, Sparkles, Compass, Globe2
+  LogOut, Eye, EyeOff, Sparkles, Compass, Globe2, QrCode, Copy
 } from 'lucide-react'
 import { apiRequest } from './api'
 import ThemeToggle from './ThemeToggle'
+import { QRCodeSVG } from 'qrcode.react'
 import EmployerWorkspace from './EmployerWorkspace'
 import AdminWorkspace from './AdminWorkspace'
 
@@ -219,7 +220,7 @@ function PublicSite({ onAuth, jobs, loading, search, setSearch, location, setLoc
               {loading ? <div className="surface-card p-8 text-sm text-[#8C7A64]">Loading opportunities…</div> : filtered.length === 0 ? (
                 <div className="surface-card p-10 text-center lg:col-span-2"><BriefcaseBusiness className="mx-auto text-[#B18A53]" size={28} /><h3 className="mt-3 font-serif text-xl font-bold">No matching opportunities yet</h3><p className="mt-2 text-sm text-[#8C7A6A]">Try another search or check back soon.</p></div>
               ) : filtered.slice(0, 6).map(job => (
-                <article key={job.id} className="surface-card p-5 sm:p-6">
+                <article id={`public-job-${job.id}`} key={job.id} className="surface-card p-5 sm:p-6">
                   <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F0E4D1] font-serif text-lg font-bold text-[#81551E]">{job.company?.[0]?.toUpperCase() || 'J'}</div>
                     <div className="min-w-0 flex-1">
@@ -585,6 +586,33 @@ function JobModal({ job, saved, applied, applying, onClose, onSave, onApply }) {
           </p>
         )}
 
+        <div className="mt-7 flex flex-col items-center gap-4 rounded-2xl border border-[#E9DFD2] bg-[#FBF7F0] p-5 text-center sm:flex-row sm:text-left">
+          <div className="rounded-xl bg-white p-3 shadow-sm">
+            <QRCodeSVG
+              value={`${window.location.origin}/?job=${encodeURIComponent(job.id)}`}
+              size={132}
+              level="H"
+              includeMargin
+              title={`QR code for ${job.title}`}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-center gap-2 font-semibold sm:justify-start">
+              <QrCode size={17} /> Share this opportunity
+            </div>
+            <p className="mt-2 text-xs leading-5 text-[#806F5C]">
+              Scan this code to open this exact job listing on JobLink.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.writeText(`${window.location.origin}/?job=${encodeURIComponent(job.id)}`)}
+              className="btn-outline mt-3 !px-3 !py-2 text-xs"
+            >
+              <Copy size={14} /> Copy job link
+            </button>
+          </div>
+        </div>
+
         <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-[#E9DFD2] pt-5">
           <button onClick={onSave} className="btn-outline">{saved ? 'Remove saved job' : 'Save opportunity'}</button>
           {external ? (
@@ -622,6 +650,20 @@ export default function App() {
     apiRequest('/jobs/').then(data => { if (mounted) setJobs(data) }).catch(() => {}).finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }
   }, [])
+
+  useEffect(() => {
+    const sharedJobId = new URLSearchParams(window.location.search).get('job')
+    if (!sharedJobId || !jobs.length) return
+
+    const matchingJob = jobs.find(job => String(job.id) === sharedJobId)
+    if (!matchingJob) return
+
+    const target = document.getElementById(`public-job-${sharedJobId}`)
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      target.classList.add('ring-2', 'ring-[#B18A53]', 'ring-offset-4')
+    }
+  }, [jobs])
 
   function openAuth(mode = 'login', role) {
     setAuthMode(mode)
