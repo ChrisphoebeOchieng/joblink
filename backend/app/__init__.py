@@ -22,6 +22,7 @@ def create_app():
     from app.routes.admin import admin_bp
     from app.routes.notifications import notifications_bp
     from app.routes.saved_jobs import saved_jobs_bp
+    from app.routes.ai import ai_bp
 
     app.register_blueprint(jobs_bp, url_prefix="/api/jobs")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
@@ -30,6 +31,7 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
     app.register_blueprint(saved_jobs_bp, url_prefix="/api/saved-jobs")
+    app.register_blueprint(ai_bp, url_prefix="/api/ai")
 
     @app.get("/")
     def home():

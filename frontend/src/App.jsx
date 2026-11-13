@@ -290,6 +290,14 @@ function JobSeekerWorkspace({ user, onLogout }) {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [chatMessages, setChatMessages] = useState([
+    {
+      role: 'assistant',
+      content: `Hello ${user.first_name}! I'm your JobLink AI Career Assistant. I can help you prepare for interviews, improve your job applications, understand technical skills and plan your career. What would you like help with today?`,
+    },
+  ])
+  const [chatInput, setChatInput] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -363,9 +371,50 @@ function JobSeekerWorkspace({ user, onLogout }) {
     } catch (err) { setError(err.message) }
   }
 
+  async function sendCareerMessage(event) {
+    event.preventDefault()
+
+    const message = chatInput.trim()
+    if (!message || chatLoading) return
+
+    setChatMessages(current => [...current, { role: 'user', content: message }])
+    setChatInput('')
+    setChatLoading(true)
+    setError('')
+
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), 35000)
+
+    try {
+      const data = await apiRequest('/ai/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+        signal: controller.signal,
+      })
+
+      setChatMessages(current => [
+        ...current,
+        { role: 'assistant', content: data.response },
+      ])
+    } catch (err) {
+      const message = err.name === 'AbortError'
+        ? "The assistant is taking too long to respond. Please try again."
+        : err.message || "The assistant is temporarily unavailable. Please try again."
+
+      setChatMessages(current => [
+        ...current,
+        { role: 'assistant', content: message },
+      ])
+    } finally {
+      window.clearTimeout(timeoutId)
+      setChatLoading(false)
+    }
+  }
+
   const nav = [
     ['Overview', Compass], ['Find jobs', Search], ['Applications', FileText],
-    ['Saved jobs', Bookmark], ['Notifications', Bell],
+    ['Saved jobs', Bookmark], ['AI Career Assistant', Sparkles],
+    ['Notifications', Bell],
   ]
 
   return (
@@ -420,6 +469,83 @@ function JobSeekerWorkspace({ user, onLogout }) {
             <div className="surface-card mt-6 p-4 sm:p-5"><div className="grid gap-3 md:grid-cols-[1.4fr_1fr]"><label className="search-field"><Search size={17} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Role, skill or company" /></label><label className="search-field"><MapPin size={17} /><input value={location} onChange={event => setLocation(event.target.value)} placeholder="Town, county or remote" /></label></div><div className="mt-4 flex flex-wrap gap-2">{jobTypes.map(item => <button key={item} onClick={() => setType(item)} className={`filter-chip ${type === item ? 'filter-chip-active' : ''}`}>{item}</button>)}</div></div>
             <JobList jobs={visibleJobs} saved={saved} appliedIds={appliedIds} onSave={toggleSaved} onApply={apply} onSelect={setSelectedJob} applying={applying} loading={loading} />
           </>}
+
+          {active === 'AI Career Assistant' && <section>
+            <p className="eyebrow">Your personal career companion</p>
+            <h1 className="section-title mt-2">AI Career Assistant</h1>
+            <p className="section-copy">Get guidance as you navigate your career journey.</p>
+
+            <div className="surface-card mt-6 flex min-h-[520px] flex-col overflow-hidden">
+              <div className="flex items-center gap-3 border-b border-[#EDE4D8] p-5">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F1E6D6] text-[#956A2E]">
+                  <Sparkles size={21} />
+                </div>
+                <div>
+                  <h2 className="font-serif text-lg font-bold">JobLink Career Assistant</h2>
+                  <p className="mt-1 text-xs text-[#988875]">Powered by Google Gemini</p>
+                </div>
+                <span className="ml-auto rounded-full bg-[#F1E6D6] px-3 py-1 text-[10px] font-semibold text-[#81551E]">AI ASSISTANT</span>
+              </div>
+
+              <div className="flex-1 space-y-5 overflow-y-auto bg-[#FCFAF7] p-4 sm:p-6">
+                {chatMessages.map((message, index) => (
+                  <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-7 ${
+                      message.role === 'user'
+                        ? 'rounded-br-sm bg-[#81551E] text-white'
+                        : 'rounded-bl-sm border border-[#EDE4D8] bg-white text-[#514333]'
+                    }`}>
+                      {message.role === 'assistant' && (
+                        <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#A17A43]">JobLink AI</p>
+                      )}
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                  </div>
+                ))}
+
+                {chatLoading && (
+                  <div className="flex justify-start">
+                    <div className="rounded-2xl rounded-bl-sm border border-[#EDE4D8] bg-white px-4 py-3 text-sm text-[#988875]">
+                      Your career assistant is thinking...
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={sendCareerMessage} className="border-t border-[#EDE4D8] bg-white p-4 sm:p-5">
+                <label htmlFor="career-chat-input" className="mb-2 block text-xs font-semibold text-[#806C53]">
+                  Ask your career question
+                </label>
+                <div className="flex items-end gap-3">
+                  <textarea
+                    id="career-chat-input"
+                    value={chatInput}
+                    onChange={event => setChatInput(event.target.value)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault()
+                        event.currentTarget.form.requestSubmit()
+                      }
+                    }}
+                    placeholder="E.g. How can I prepare for a junior developer interview?"
+                    rows={2}
+                    maxLength={2000}
+                    disabled={chatLoading}
+                    className="min-h-[52px] flex-1 resize-y rounded-xl border border-[#E9DFD2] bg-[#FCFAF7] px-4 py-3 text-sm outline-none transition focus:border-[#B7863E] disabled:opacity-60"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!chatInput.trim() || chatLoading}
+                    className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl bg-[#81551E] text-white transition hover:bg-[#684318] disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Send message"
+                  >
+                    <ArrowRight size={19} />
+                  </button>
+                </div>
+                <p className="mt-2 text-[10px] text-[#A0917F]">Press Enter to send · Shift + Enter for a new line · Maximum 2,000 characters</p>
+              </form>
+            </div>
+          </section>}
 
           {active === 'Notifications' && <section><p className="eyebrow">Stay informed</p><h1 className="section-title mt-2">Notifications</h1><p className="section-copy">Updates about your applications and activity.</p><div className="mt-6 space-y-3">{notifications.length ? notifications.map(item => <article key={item.id} className={`surface-card flex items-start gap-4 p-5 ${!item.is_read ? 'border-[#D8BD91]' : ''}`}><span className="metric-icon"><Bell size={17} /></span><div className="min-w-0 flex-1"><p className="text-sm leading-6">{item.message}</p><p className="mt-2 text-xs text-[#A0917F]">{new Date(item.created_at).toLocaleString('en-KE')}</p></div>{!item.is_read && <button onClick={() => markRead(item.id)} className="text-xs font-semibold text-[#81551E]">Mark read</button>}</article>) : <EmptyState title="You're all caught up." detail="New updates will appear here." />}</div></section>}
           <footer className="mt-12 flex flex-wrap justify-between gap-3 border-t border-[#E9DFD2] py-5 text-[11px] text-[#A0917F]"><span>© 2026 JobLink</span><span>Connecting talent with opportunity across Kenya.</span></footer>
