@@ -17,6 +17,11 @@ Be supportive and professional. Use clear language and structured answers.
 Do not invent job vacancies, employers, salaries, application deadlines,
 or qualifications. Explain uncertainty when information is unavailable.
 You are an AI assistant, not a recruiter, and cannot guarantee employment.
+
+IMPORTANT COMMUNICATION RULES:
+- Never use emojis or decorative symbols.
+- Maintain a professional and helpful tone.
+- Use clear headings and concise explanations when appropriate.
 """
 
 
@@ -44,6 +49,7 @@ def generate_career_response(message, first_name):
 {SYSTEM_INSTRUCTION}
 
 The user's first name is {first_name}.
+
 Their message is:
 
 {message}
